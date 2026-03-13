@@ -168,7 +168,7 @@
     "href": "chapter_2_observatory.html#sdg-deep-dives",
     "title": "3  Coromandel",
     "section": "3.5 SDG Deep Dives",
-    "text": "3.5 SDG Deep Dives\n\n3.5.1 Evidence count and average score per SDG (all years combined)\n\n\n\n\n\n\n\n\n3.5.2 Top evidence items (strongest, with page citations)",
+    "text": "3.5 SDG Deep Dives\n\n3.5.1 Evidence count and average score per SDG (all years combined)\n\n\n\n↓ CSV\n↓ Excel\n\n\n\n\n\n\n\n\n\n3.5.2 Top evidence items (strongest, with page citations)\n\n\n\n↓ CSV\n↓ Excel",
     "crumbs": [
       "Single-Company Observatories",
       "<span class='chapter-number'>3</span>  <span class='chapter-title'>Coromandel</span>"
@@ -179,7 +179,7 @@
     "href": "chapter_2_observatory.html#all-evidence-full-searchable-table",
     "title": "3  Coromandel",
     "section": "3.6 All Evidence — Full Searchable Table",
-    "text": "3.6 All Evidence — Full Searchable Table",
+    "text": "3.6 All Evidence — Full Searchable Table\n\n\n\n↓ CSV\n↓ Excel",
     "crumbs": [
       "Single-Company Observatories",
       "<span class='chapter-number'>3</span>  <span class='chapter-title'>Coromandel</span>"
@@ -234,7 +234,7 @@
     "href": "chapter_2b_jswsteel.html#sdg-deep-dives",
     "title": "4  JSW Steel",
     "section": "4.5 SDG Deep Dives",
-    "text": "4.5 SDG Deep Dives\n\n4.5.1 Evidence count and average score per SDG (all years combined)\n\n\n\n\n\n\n\n\n4.5.2 Top evidence items (strongest, with page citations)",
+    "text": "4.5 SDG Deep Dives\n\n4.5.1 Evidence count and average score per SDG (all years combined)\n\n\n\n↓ CSV\n↓ Excel\n\n\n\n\n\n\n\n\n\n4.5.2 Top evidence items (strongest, with page citations)\n\n\n\n↓ CSV\n↓ Excel",
     "crumbs": [
       "Single-Company Observatories",
       "<span class='chapter-number'>4</span>  <span class='chapter-title'>JSW Steel</span>"
@@ -245,7 +245,7 @@
     "href": "chapter_2b_jswsteel.html#all-evidence-full-searchable-table",
     "title": "4  JSW Steel",
     "section": "4.6 All Evidence — Full Searchable Table",
-    "text": "4.6 All Evidence — Full Searchable Table",
+    "text": "4.6 All Evidence — Full Searchable Table\n\n\n\n↓ CSV\n↓ Excel",
     "crumbs": [
       "Single-Company Observatories",
       "<span class='chapter-number'>4</span>  <span class='chapter-title'>JSW Steel</span>"
@@ -296,7 +296,7 @@
     "href": "chapter_3_comparison.html#evidence-quality-comparison",
     "title": "5  Cross-Company Comparison",
     "section": "5.5 Evidence Quality Comparison",
-    "text": "5.5 Evidence Quality Comparison",
+    "text": "5.5 Evidence Quality Comparison\n\n\n\n↓ CSV\n↓ Excel",
     "crumbs": [
       "<span class='chapter-number'>5</span>  <span class='chapter-title'>Cross-Company Comparison</span>"
     ]
@@ -366,7 +366,7 @@
     "href": "chapter_4_theory.html#maturity-index-longitudinal-analysis",
     "title": "6  Longitudinal Theory Testing",
     "section": "6.5 4.4 Maturity Index — Longitudinal Analysis",
-    "text": "6.5 4.4 Maturity Index — Longitudinal Analysis\n\n6.5.1 Year-by-year trajectory with components\n\nCoromandelJSW Steel\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n6.5.2 Pre/post period comparison\n\nCoromandelJSW Steel\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n6.5.3 Segmented regression: did integrated reporting cause a structural break?\n\nCoromandelJSW Steel\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nWarning\n\n\n\nStatistical caution: With fewer than 15 annual observations per company, segmented regression is illustrative rather than inferential. The coefficient direction and magnitude are meaningful; p-values should not be over-interpreted.",
+    "text": "6.5 4.4 Maturity Index — Longitudinal Analysis\n\n6.5.1 Year-by-year trajectory with components\n\nCoromandelJSW Steel\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n6.5.2 Pre/post period comparison\n\nCoromandelJSW Steel\n\n\n\n\n\n↓ CSV\n↓ Excel\n\n\n\n\n\n\n\n\n\n\n\n\n↓ CSV\n↓ Excel\n\n\n\n\n\n\n\n\n\n\n\n\n6.5.3 Segmented regression: did integrated reporting cause a structural break?\n\nCoromandelJSW Steel\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nWarning\n\n\n\nStatistical caution: With fewer than 15 annual observations per company, segmented regression is illustrative rather than inferential. The coefficient direction and magnitude are meaningful; p-values should not be over-interpreted.",
     "crumbs": [
       "<span class='chapter-number'>6</span>  <span class='chapter-title'>Longitudinal Theory Testing</span>"
     ]
@@ -376,7 +376,7 @@
     "href": "chapter_4_theory.html#anomaly-detection",
     "title": "6  Longitudinal Theory Testing",
     "section": "6.6 4.5 Anomaly Detection",
-    "text": "6.6 4.5 Anomaly Detection\n\n6.6.1 High-confidence items that scored weak\nItems where the model was confident but the deterministic rubric scored low. These warrant manual review — either the rubric is too strict, or the model over-estimated evidence quality.\n\nCoromandelJSW Steel\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n6.6.2 SDG score drops year-over-year (retreat signals)\nSDG-years where the average score dropped by more than 1 point from the previous year.\n\nCoromandelJSW Steel",
+    "text": "6.6 4.5 Anomaly Detection\n\n6.6.1 High-confidence items that scored weak\nItems where the model was confident but the deterministic rubric scored low. These warrant manual review — either the rubric is too strict, or the model over-estimated evidence quality.\n\nCoromandelJSW Steel\n\n\n\n\n\n↓ CSV\n↓ Excel\n\n\n\n\n\n\n\n\n\n\n\n\n↓ CSV\n↓ Excel\n\n\n\n\n\n\n\n\n\n\n\n\n6.6.2 SDG score drops year-over-year (retreat signals)\nSDG-years where the average score dropped by more than 1 point from the previous year.\n\nCoromandelJSW Steel",
     "crumbs": [
       "<span class='chapter-number'>6</span>  <span class='chapter-title'>Longitudinal Theory Testing</span>"
     ]
@@ -396,7 +396,7 @@
     "href": "chapter_5_reports.html",
     "title": "7  Reports Library",
     "section": "",
-    "text": "7.1 Report index\nClick ▶ on any row in the index to read the full report inline. Expand individual years in the full-text section below to see the complete output.",
+    "text": "7.1 Report index\nClick ▶ on any row in the index to read the full report inline. Expand individual years in the full-text section below to see the complete output.\n↓ CSV\n↓ Excel",
     "crumbs": [
       "<span class='chapter-number'>7</span>  <span class='chapter-title'>Reports Library</span>"
     ]
