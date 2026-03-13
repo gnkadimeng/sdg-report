@@ -1,0 +1,342 @@
+---
+title: "JSW Steel"
+subtitle: "SDG Disclosure 2020–2025"
+---
+
+```{r setup, include=FALSE}
+library(here); library(reactable); library(plotly); library(gt)
+source(here("R", "load_evidence.R"))
+source(here("R", "plot_themes.R"))
+source(here("R", "scoring_helpers.R"))
+
+# Filter to JSW Steel only
+co_ev      <- ev      |> filter(company == "jswsteel")
+co_ev_wide <- ev_wide |> filter(company == "jswsteel")
+co_meta    <- run_meta|> filter(company == "jswsteel")
+co_sdg_yr  <- sdg_yr  |> filter(company == "jswsteel")
+co_maturity <- compute_maturity_index(co_ev_wide)
+```
+
+## SDG Portfolio Heatmap
+
+The single most informative view: which SDGs appear, in which years, and how deeply?
+**Colour intensity** = average computed score (0–13). **Cell number** = evidence count.
+
+```{r sdg-heatmap}
+heat_data <- co_sdg_yr |>
+  mutate(sdg = fct_reorder(as.character(sdg), sdg_num))
+
+p <- heat_data |>
+  ggplot(aes(x = report_year, y = sdg,
+             fill = average_score, text = paste0(
+               sdg, " · ", report_year,
+               "\nEvidence: ", evidence_count,
+               "\nAvg score: ", round(average_score, 2),
+               "\n", implementation_profile
+             ))) +
+  geom_tile(colour = "white", linewidth = 0.5) +
+  geom_text(aes(label = evidence_count), size = 2.8,
+            colour = "white", fontface = "bold") +
+  scale_fill_gradient2(
+    low = "#D9EAD3", mid = "#4C9F38", high = "#19486A",
+    midpoint = 5, na.value = "grey92",
+    name = "Avg score\n(0–13)"
+  ) +
+  scale_x_continuous(breaks = unique(heat_data$report_year)) +
+  labs(
+    title    = "JSW Steel SDG disclosure portfolio 2020–2025",
+    subtitle = "Cell colour = average evidence score · Number = evidence count",
+    x = "Report year", y = NULL
+  ) +
+  theme_sdg() +
+  theme(
+    axis.text.y   = element_text(size = 9),
+    panel.grid    = element_blank()
+  )
+
+ggplotly(p, tooltip = "text") |>
+  layout(yaxis = list(autorange = "reversed"))
+```
+
+---
+
+## Disclosure Volume Trends
+
+```{r volume-trends}
+yr  <- as.integer(unlist(co_meta$report_year))
+nv  <- as.integer(unlist(co_meta$n_valid))
+nr  <- as.integer(unlist(co_meta$n_rejected))
+rr  <- as.numeric(unlist(co_meta$rejection_rate))
+
+plot_ly() |>
+  add_trace(x = yr, y = nv, name = "Valid",
+            type = "scatter", mode = "lines+markers",
+            line = list(color = "#3F7E44", width = 2),
+            marker = list(color = "#3F7E44", size = 7)) |>
+  add_trace(x = yr, y = nr, name = "Rejected",
+            type = "scatter", mode = "lines+markers",
+            line = list(color = "#E5243B", width = 2, dash = "dash"),
+            marker = list(color = "#E5243B", size = 7)) |>
+  layout(title = "Evidence items per year",
+         xaxis = list(title = "Report year", tickvals = yr),
+         yaxis = list(title = "Count"),
+         legend = list(orientation = "h"))
+```
+
+```{r rejection-rate}
+mean_rr <- mean(rr, na.rm = TRUE)
+plot_ly(x = yr, y = rr, type = "bar",
+        marker = list(color = "#E5243B", opacity = 0.7)) |>
+  layout(title = "Rejection rate per year",
+         xaxis = list(title = "Report year", tickvals = yr),
+         yaxis = list(title = "Rejection rate", tickformat = ".0%"),
+         shapes = list(list(
+           type = "line", x0 = 0, x1 = 1, xref = "paper",
+           y0 = mean_rr, y1 = mean_rr,
+           line = list(color = "grey40", dash = "dash", width = 1.5)
+         )))
+```
+
+---
+
+## Maturity Trajectory
+
+### Implementation stage composition over time
+
+The key question: is `mention_only` shrinking and `implemented_with_measurable_evidence` growing?
+
+```{r stage-stacked}
+stage_data <- co_ev_wide |>
+  count(report_year, implementation_stage) |>
+  group_by(report_year) |>
+  mutate(pct = n / sum(n)) |>
+  ungroup()
+
+p <- stage_data |>
+  ggplot(aes(x = report_year, y = pct, fill = implementation_stage,
+             text = paste0(STAGE_LABELS[as.character(implementation_stage)],
+                           "\n", scales::percent(pct, accuracy = 1)))) +
+  geom_col(width = 0.7, position = "stack") +
+  scale_fill_stage() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(breaks = unique(co_ev_wide$report_year)) +
+  labs(
+    title    = "Implementation stage composition per year",
+    subtitle = "Maturing disclosure: red tones shrink, dark tones grow",
+    x = "Report year", y = "Proportion of evidence items",
+    fill = "Stage"
+  ) +
+  theme_sdg()
+
+ggplotly(p, tooltip = "text")
+```
+
+### Maturity index over time
+
+```{r maturity-index}
+mat_df <- co_maturity |>
+  mutate(
+    report_year    = as.integer(report_year),
+    maturity_index = as.numeric(maturity_index),
+    period         = as.character(period),
+    hover          = paste0(period, "<br>Year: ", report_year,
+                            "<br>Maturity: ", scales::percent(maturity_index, 0.1))
+  )
+period_colours <- c("Annual (2016–2021)" = "#FD9D24", "Integrated (2022–2025)" = "#19486A")
+
+plot_ly(mat_df, x = ~report_year) |>
+  add_lines(y = ~maturity_index,
+            line = list(color = "#19486A", width = 2),
+            showlegend = FALSE, hoverinfo = "none") |>
+  add_markers(y = ~maturity_index,
+              color = ~period, colors = period_colours,
+              marker = list(size = 10),
+              text = ~hover, hoverinfo = "text") |>
+  layout(
+    title = "SDG disclosure maturity index — JSW Steel 2020–2025",
+    xaxis = list(title = "Report year", tickvals = ~report_year),
+    yaxis = list(title = "Maturity index [0–1]", range = c(0, 1),
+                 tickformat = ".0%"),
+    legend = list(orientation = "h")
+  )
+```
+
+---
+
+## Evidence Quality Dimensions
+
+```{r quality-dims}
+quality_yr <- co_ev_wide |>
+  group_by(report_year) |>
+  summarise(
+    quant_rate     = mean(quantitative_support, na.rm = TRUE),
+    oversight_rate = mean(oversight_support,    na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(report_year = as.integer(report_year))
+
+plot_ly(quality_yr, x = ~report_year) |>
+  add_trace(y = ~quant_rate, name = "Quantitative support",
+            type = "scatter", mode = "lines+markers",
+            line = list(color = "#3F7E44", width = 2),
+            marker = list(color = "#3F7E44", size = 7)) |>
+  add_trace(y = ~oversight_rate, name = "Oversight support",
+            type = "scatter", mode = "lines+markers",
+            line = list(color = "#0A97D9", width = 2),
+            marker = list(color = "#0A97D9", size = 7)) |>
+  layout(
+    title = "Evidence quality rates per year",
+    xaxis = list(title = "Report year", tickvals = ~report_year),
+    yaxis = list(title = "Rate", range = c(0, 1), tickformat = ".0%"),
+    legend = list(orientation = "h")
+  )
+```
+
+::: {.callout-note}
+These two dimensions are the hardest signals to fake. A claim that passes both — it has a number **and** a named governance body — is the strongest kind of SDG evidence the pipeline can extract.
+:::
+
+---
+
+## SDG Deep Dives
+
+### Evidence count and average score per SDG (all years combined)
+
+```{r sdg-summary}
+sdg_totals <- co_ev |>
+  group_by(sdg) |>
+  summarise(
+    n          = n(),
+    avg_score  = round(mean(computed_score, na.rm = TRUE), 2),
+    quant_rate = scales::percent(mean(quantitative_support, na.rm = TRUE), accuracy = 1),
+    pct_strong = scales::percent(mean(computed_strength == "strong", na.rm = TRUE), accuracy = 1),
+    years      = paste(sort(unique(report_year)), collapse = ", "),
+    .groups    = "drop"
+  ) |>
+  arrange(desc(avg_score))
+
+reactable(
+  sdg_totals,
+  columns = list(
+    sdg        = colDef(name = "SDG", maxWidth = 80),
+    n          = colDef(name = "Evidence items", maxWidth = 130, align = "center"),
+    avg_score  = colDef(name = "Avg score", maxWidth = 100, align = "center"),
+    quant_rate = colDef(name = "Quant. support", maxWidth = 130, align = "center"),
+    pct_strong = colDef(name = "% Strong", maxWidth = 100, align = "center"),
+    years      = colDef(name = "Years present", minWidth = 150)
+  ),
+  striped = TRUE, highlight = TRUE, searchable = TRUE,
+  defaultSortOrder = "desc",
+  defaultSorted = "avg_score"
+)
+```
+
+### Top evidence items (strongest, with page citations)
+
+```{r top-evidence}
+top_ev <- co_ev_wide |>
+  arrange(desc(computed_score), desc(confidence)) |>
+  slice_head(n = 30) |>
+  select(
+    Year     = report_year,
+    Page     = page_number,
+    Score    = computed_score,
+    Strength = computed_strength,
+    Stage    = implementation_stage,
+    SDGs     = candidate_sdgs,
+    Tags     = evidence_tags,
+    Summary  = evidence_summary,
+    Text     = evidence_text
+  ) |>
+  mutate(
+    SDGs = map_chr(SDGs, paste, collapse = ", "),
+    Tags = map_chr(Tags, paste, collapse = ", "),
+    Stage = recode(as.character(Stage),
+      mention_only                         = "Mention",
+      planned_action                       = "Planned",
+      implementation_in_progress           = "In progress",
+      implemented_with_measurable_evidence = "Measurable"
+    )
+  )
+
+reactable(
+  top_ev,
+  columns = list(
+    Year     = colDef(maxWidth = 60,  align = "center"),
+    Page     = colDef(maxWidth = 55,  align = "center"),
+    Score    = colDef(maxWidth = 60,  align = "center",
+                      style = function(v) list(fontWeight = "bold", color = "#19486A")),
+    Strength = colDef(maxWidth = 90,  align = "center"),
+    Stage    = colDef(maxWidth = 100),
+    SDGs     = colDef(maxWidth = 120),
+    Tags     = colDef(maxWidth = 160),
+    Summary  = colDef(minWidth = 200),
+    Text     = colDef(minWidth = 250, show = FALSE)
+  ),
+  details = function(index) {
+    htmltools::div(
+      style = "padding: 8px 16px; background: #f8f9fa; border-left: 3px solid #19486A;",
+      htmltools::strong("Verbatim text: "),
+      top_ev$Text[index]
+    )
+  },
+  striped = TRUE, highlight = TRUE, searchable = TRUE,
+  defaultPageSize = 10
+)
+```
+
+---
+
+## All Evidence — Full Searchable Table
+
+```{r full-table}
+all_ev <- co_ev_wide |>
+  arrange(report_year, desc(computed_score)) |>
+  transmute(
+    Year     = report_year,
+    Page     = page_number,
+    Section  = section_heading,
+    Score    = computed_score,
+    Strength = as.character(computed_strength),
+    Stage    = recode(as.character(implementation_stage),
+      mention_only                         = "Mention only",
+      planned_action                       = "Planned",
+      implementation_in_progress           = "In progress",
+      implemented_with_measurable_evidence = "Measurable"
+    ),
+    SDGs     = map_chr(candidate_sdgs, paste, collapse = ", "),
+    Tags     = map_chr(evidence_tags,  paste, collapse = ", "),
+    Quant    = if_else(quantitative_support, "✓", ""),
+    Oversight= if_else(oversight_support, "✓", ""),
+    Summary  = evidence_summary,
+    Text     = evidence_text
+  )
+
+reactable(
+  all_ev,
+  columns = list(
+    Year     = colDef(maxWidth = 60,  align = "center", filterable = TRUE),
+    Page     = colDef(maxWidth = 55,  align = "center"),
+    Section  = colDef(maxWidth = 160, show = FALSE),
+    Score    = colDef(maxWidth = 60,  align = "center"),
+    Strength = colDef(maxWidth = 90,  align = "center", filterable = TRUE),
+    Stage    = colDef(maxWidth = 110, filterable = TRUE),
+    SDGs     = colDef(maxWidth = 120, filterable = TRUE),
+    Tags     = colDef(maxWidth = 160),
+    Quant    = colDef(maxWidth = 60,  align = "center", name = "Quant"),
+    Oversight= colDef(maxWidth = 75,  align = "center", name = "Govern"),
+    Summary  = colDef(minWidth = 200),
+    Text     = colDef(show = FALSE)
+  ),
+  details = function(index) {
+    htmltools::div(
+      style = "padding: 8px 16px; background: #f8f9fa; border-left: 3px solid #19486A;",
+      htmltools::strong("Section: "), all_ev$Section[index], htmltools::br(),
+      htmltools::strong("Verbatim: "), all_ev$Text[index]
+    )
+  },
+  filterable = TRUE, searchable = TRUE,
+  striped = TRUE, highlight = TRUE, compact = TRUE,
+  defaultPageSize = 15
+)
+```

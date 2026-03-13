@@ -1,0 +1,169 @@
+---
+title: "Publishable Tables with rempsyc for India and South Africa"
+author: "OpenAI"
+date: "2026-03-12"
+output:
+  word_document: default
+  html_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(rempsyc)
+library(flextable)
+
+theme_publishable <- function(ft) {
+  ft |>
+    font(fontname = "Palatino Linotype", part = "all") |>
+    fontsize(size = 9, part = "all") |>
+    line_spacing(space = 1.0, part = "all") |>
+    padding(padding.top = 4, padding.bottom = 4, part = "all") |>
+    align(align = "left", part = "header") |>
+    autofit()
+}
+```
+
+# Overview
+
+This document uses `rempsyc::nice_table()` to create publication-ready tables, following the package workflow for APA-style tables and Word export. The values below are illustrative placeholders, not empirical results.
+
+# India
+
+## Table 1. Company-level benchmark and reliability
+
+```{r}
+india_benchmark <- data.frame(
+  Company = c("Coromandel", "JSW Steel", "BASF India", "Ambuja Cement", "Aarti Industries Limited", "GNFC"),
+  `Retrieval Recall@5` = c(0.78, 0.76, 0.74, 0.77, 0.73, 0.75),
+  `SDG F1` = c(0.81, 0.79, 0.77, 0.80, 0.76, 0.78),
+  `Stage Accuracy` = c(0.72, 0.74, 0.71, 0.75, 0.70, 0.73),
+  `Valid-item Precision` = c(0.88, 0.86, 0.89, 0.87, 0.85, 0.86),
+  `Over-claim Rate` = c(0.12, 0.14, 0.10, 0.11, 0.13, 0.12),
+  check.names = FALSE
+)
+
+ft_india_benchmark <- nice_table(
+  india_benchmark,
+  title = c("Table 1", "Company-level benchmark and reliability (India)"),
+  note = c("Illustrative values only.", "Not empirical results.")
+) |>
+  theme_publishable()
+
+ft_india_benchmark
+```
+
+## Table 2. Company-level substantive disclosure profile
+
+```{r}
+india_substantive <- data.frame(
+  Company = c("Coromandel", "JSW Steel", "BASF India", "Ambuja Cement", "Aarti Industries Limited", "GNFC"),
+  `Valid Evidence Units` = c(35, 41, 33, 38, 31, 34),
+  `Rhetoric Share` = c(0.26, 0.22, 0.29, 0.24, 0.31, 0.27),
+  `Commitment Share` = c(0.28, 0.25, 0.30, 0.27, 0.29, 0.29),
+  `Implementation Share` = c(0.46, 0.53, 0.41, 0.49, 0.40, 0.44),
+  `Measured Implementation Share` = c(0.26, 0.31, 0.21, 0.29, 0.19, 0.24),
+  `Mean Evidence Score` = c(3.9, 4.2, 3.7, 4.0, 3.6, 3.8),
+  `Dominant SDGs` = c(
+    "SDG 2, SDG 12, SDG 13",
+    "SDG 8, SDG 9, SDG 12, SDG 13",
+    "SDG 6, SDG 12, SDG 13",
+    "SDG 9, SDG 11, SDG 12, SDG 13",
+    "SDG 6, SDG 8, SDG 12",
+    "SDG 2, SDG 6, SDG 12, SDG 13"
+  ),
+  check.names = FALSE
+)
+
+ft_india_substantive <- nice_table(
+  india_substantive,
+  title = c("Table 2", "Company-level substantive disclosure profile (India)"),
+  note = c("Illustrative values only.", "Not empirical results.")
+) |>
+  theme_publishable()
+
+ft_india_substantive
+```
+
+# South Africa
+
+## Table 3. Company-level benchmark and reliability
+
+```{r}
+sa_benchmark <- data.frame(
+  Company = c("Kumba Iron Ore", "Wesizwe", "Gemfields", "BHP", "AECI", "Anglo American"),
+  `Retrieval Recall@5` = c(0.79, 0.71, 0.74, 0.80, 0.75, 0.82),
+  `SDG F1` = c(0.82, 0.73, 0.77, 0.83, 0.78, 0.84),
+  `Stage Accuracy` = c(0.76, 0.68, 0.72, 0.77, 0.73, 0.79),
+  `Valid-item Precision` = c(0.89, 0.83, 0.86, 0.90, 0.87, 0.91),
+  `Over-claim Rate` = c(0.10, 0.16, 0.13, 0.09, 0.11, 0.08),
+  check.names = FALSE
+)
+
+ft_sa_benchmark <- nice_table(
+  sa_benchmark,
+  title = c("Table 3", "Company-level benchmark and reliability (South Africa)"),
+  note = c("Illustrative values only.", "Not empirical results.")
+) |>
+  theme_publishable()
+
+ft_sa_benchmark
+```
+
+## Table 4. Company-level substantive disclosure profile
+
+```{r}
+sa_substantive <- data.frame(
+  Company = c("Kumba Iron Ore", "Wesizwe", "Gemfields", "BHP", "AECI", "Anglo American"),
+  `Valid Evidence Units` = c(39, 24, 29, 44, 32, 47),
+  `Rhetoric Share` = c(0.21, 0.35, 0.28, 0.19, 0.27, 0.18),
+  `Commitment Share` = c(0.24, 0.29, 0.27, 0.23, 0.28, 0.22),
+  `Implementation Share` = c(0.55, 0.36, 0.45, 0.58, 0.45, 0.60),
+  `Measured Implementation Share` = c(0.33, 0.15, 0.24, 0.36, 0.25, 0.39),
+  `Mean Evidence Score` = c(4.3, 3.3, 3.8, 4.4, 3.9, 4.6),
+  `Dominant SDGs` = c(
+    "SDG 8, SDG 9, SDG 12, SDG 13",
+    "SDG 8, SDG 9, SDG 13",
+    "SDG 5, SDG 8, SDG 12, SDG 15",
+    "SDG 8, SDG 12, SDG 13, SDG 15",
+    "SDG 6, SDG 8, SDG 12, SDG 13",
+    "SDG 8, SDG 12, SDG 13, SDG 15"
+  ),
+  check.names = FALSE
+)
+
+ft_sa_substantive <- nice_table(
+  sa_substantive,
+  title = c("Table 4", "Company-level substantive disclosure profile (South Africa)"),
+  note = c("Illustrative values only.", "Not empirical results.")
+) |>
+  theme_publishable()
+
+ft_sa_substantive
+```
+
+# Save tables to Word
+
+```{r eval=FALSE}
+# Example: save one table to Word
+flextable::save_as_docx(ft_india_benchmark, path = "table_india_benchmark.docx")
+
+# Example: save multiple tables to one Word file
+flextable::save_as_docx(
+  `Table 1` = ft_india_benchmark,
+  `Table 2` = ft_india_substantive,
+  `Table 3` = ft_sa_benchmark,
+  `Table 4` = ft_sa_substantive,
+  path = "publishable_tables_india_south_africa.docx"
+)
+```
+
+# Notes
+
+- `rempsyc::nice_table()` is used as the base table generator.
+- `flextable` formatting is applied afterward to match the requested manuscript style more closely:
+  - font: Palatino Linotype
+  - size: 9 pt
+- These are sample values for layout and drafting only.

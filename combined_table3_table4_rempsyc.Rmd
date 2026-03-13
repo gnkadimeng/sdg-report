@@ -1,0 +1,213 @@
+---
+title: "Combined Table 3 and Table 4 for India and South Africa"
+author: "OpenAI"
+date: "2026-03-12"
+output:
+  word_document: default
+  html_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(rempsyc)
+library(flextable)
+
+theme_publishable <- function(ft) {
+  ft |>
+    font(fontname = "Palatino Linotype", part = "all") |>
+    fontsize(size = 9, part = "all") |>
+    line_spacing(space = 1.0, part = "all") |>
+    padding(padding.top = 4, padding.bottom = 4, part = "all") |>
+    align(align = "left", part = "header") |>
+    autofit()
+}
+```
+
+# Overview
+
+This document combines the following manuscript-style tables for **India** and **South Africa**:
+
+-   **Table 3. Longitudinal disclosure trend summary**
+-   **Table 4. Cross-model robustness summary**
+
+The tables use:
+
+``` r
+library(rempsyc)
+library(flextable)
+```
+
+and are formatted for a publication-style workflow with **Palatino Linotype** at **9 pt**.
+
+# Combined longitudinal and robustness tables
+
+```{r}
+combined_tbl <- data.frame(
+  Country = c(
+    rep("India", 6),
+    rep("South Africa", 6),
+    rep("India", 6),
+    rep("South Africa", 6)
+  ),
+  Table = c(
+    rep("Table 3. Longitudinal disclosure trend summary", 12),
+    rep("Table 4. Cross-model robustness summary", 12)
+  ),
+  Company = c(
+    "Coromandel",
+    "JSW Steel",
+    "BASF India",
+    "Ambuja Cement",
+    "Aarti Industries Limited",
+    "GNFC",
+    "Kumba Iron Ore",
+    "Wesizwe",
+    "Gemfields",
+    "BHP",
+    "AECI",
+    "Anglo American",
+    "Coromandel",
+    "JSW Steel",
+    "BASF India",
+    "Ambuja Cement",
+    "Aarti Industries Limited",
+    "GNFC",
+    "Kumba Iron Ore",
+    "Wesizwe",
+    "Gemfields",
+    "BHP",
+    "AECI",
+    "Anglo American"
+  ),
+  `Years Covered / SDG Agreement` = c(
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "2019–2025",
+    "0.82",
+    "0.79",
+    "0.84",
+    "0.81",
+    "0.77",
+    "0.80",
+    "0.83",
+    "0.74",
+    "0.79",
+    "0.85",
+    "0.80",
+    "0.87"
+  ),
+  `Implementation Slope / Stage Agreement` = c(
+    "+0.05/year",
+    "+0.06/year",
+    "+0.03/year",
+    "+0.05/year",
+    "+0.03/year",
+    "+0.04/year",
+    "+0.06/year",
+    "+0.02/year",
+    "+0.04/year",
+    "+0.06/year",
+    "+0.04/year",
+    "+0.07/year",
+    "0.76",
+    "0.74",
+    "0.78",
+    "0.77",
+    "0.72",
+    "0.75",
+    "0.78",
+    "0.69",
+    "0.73",
+    "0.80",
+    "0.75",
+    "0.82"
+  ),
+  `Rhetoric Slope / Over-claim Difference` = c(
+    "-0.04/year",
+    "-0.03/year",
+    "-0.02/year",
+    "-0.03/year",
+    "-0.01/year",
+    "-0.03/year",
+    "-0.03/year",
+    "-0.01/year",
+    "-0.02/year",
+    "-0.03/year",
+    "-0.02/year",
+    "-0.04/year",
+    "0.04",
+    "0.06",
+    "0.03",
+    "0.04",
+    "0.05",
+    "0.04",
+    "0.03",
+    "0.07",
+    "0.05",
+    "0.03",
+    "0.04",
+    "0.02"
+  ),
+  `Most Persistent SDGs / Interpretation` = c(
+    "SDG 2, SDG 12, SDG 13 | Progressive shift from commitment language to implementation evidence",
+    "SDG 8, SDG 9, SDG 12, SDG 13 | Strongest improvement in operational and measurable disclosure",
+    "SDG 6, SDG 12, SDG 13 | Gradual improvement, but more moderate than heavy industry peers",
+    "SDG 9, SDG 11, SDG 12, SDG 13 | Increasing emphasis on implementation and quantitative evidence",
+    "SDG 6, SDG 8, SDG 12 | Incremental improvement with persistent policy-heavy language",
+    "SDG 2, SDG 6, SDG 12, SDG 13 | Moderate transition toward more measurable implementation disclosure",
+    "SDG 8, SDG 9, SDG 12, SDG 13 | Steady rise in operational and climate-related disclosure",
+    "SDG 8, SDG 9, SDG 13 | Limited but positive improvement from lower disclosure maturity baseline",
+    "SDG 5, SDG 8, SDG 12, SDG 15 | Moderate shift toward more implementation and community evidence",
+    "SDG 8, SDG 12, SDG 13, SDG 15 | Strong and sustained measurable implementation pattern",
+    "SDG 6, SDG 8, SDG 12, SDG 13 | Progressive strengthening of production, safety, and climate disclosure",
+    "SDG 8, SDG 12, SDG 13, SDG 15 | Strongest disclosure maturity and broadest SDG persistence in the group",
+    "Good agreement, moderate stage sensitivity",
+    "Strong content signal, slightly higher model variance",
+    "Most stable across models",
+    "Good cross-model consistency",
+    "Moderate model sensitivity",
+    "Reasonably stable across model choices",
+    "Strong agreement and low model sensitivity",
+    "Highest model sensitivity and lower stability",
+    "Moderate robustness with some stage variance",
+    "Highly stable across models",
+    "Good robustness with moderate stage sensitivity",
+    "Strongest cross-model consistency in the sample"
+  ),
+  check.names = FALSE
+)
+
+ft_combined <- nice_table(
+  combined_tbl,
+  title = c("Combined Table 3 and Table 4", "Longitudinal disclosure trend summary and cross-model robustness summary for India and South Africa"),
+  note = c("Illustrative values only.", "Not empirical results.")
+) |>
+  theme_publishable()
+
+ft_combined
+```
+
+# Save to Word
+
+```{r eval=FALSE}
+flextable::save_as_docx(
+  `Combined Table 3 and Table 4` = ft_combined,
+  path = "combined_table3_table4_india_south_africa.docx"
+)
+```
+
+# Note
+
+Some earlier uploaded files in this chat have expired. This file uses sample values and layout only. Upload the source reports again if you want the same table structure filled with real computed results.

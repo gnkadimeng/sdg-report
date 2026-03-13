@@ -1,0 +1,205 @@
+---
+title: "Cross-Company Comparison"
+subtitle: "Multi-company SDG disclosure benchmarking"
+---
+
+```{r setup, include=FALSE}
+library(here); library(reactable); library(plotly); library(gt)
+source(here("R", "load_evidence.R"))
+source(here("R", "plot_themes.R"))
+source(here("R", "scoring_helpers.R"))
+```
+
+::: {.callout-note}
+**Status: Single-company mode.**
+This chapter is structured to accommodate multiple companies. To add a new company:
+
+1. Run the Python pipeline on the company's PDF reports
+2. Add the company slug to `COMPANIES` in `R/load_evidence.R`
+3. Re-render the book (`quarto render`)
+
+All charts and tables below will auto-update with peer data.
+:::
+
+```{r company-check}
+n_companies <- n_distinct(ev$company)
+companies   <- unique(ev$company)
+```
+
+## Companies in dataset
+
+```{r companies-table}
+run_meta |>
+  group_by(company) |>
+  summarise(
+    Years        = paste(range(report_year), collapse = "–"),
+    `N reports`  = n(),
+    `Valid items` = sum(n_valid),
+    `Avg score`  = round(mean(
+      ev_wide |> filter(company == first(company)) |> pull(computed_score),
+      na.rm = TRUE
+    ), 2),
+    .groups = "drop"
+  ) |>
+  gt() |>
+  tab_header(title = "Companies with processed reports") |>
+  cols_label(company = "Company")
+```
+
+---
+
+## SDG Portfolio Comparison
+
+When multiple companies are loaded, this heatmap shows each company's SDG coverage side by side. Currently showing Coromandel only.
+
+```{r portfolio-comparison}
+sdg_company <- ev |>
+  group_by(company, sdg) |>
+  summarise(
+    avg_score = mean(computed_score, na.rm = TRUE),
+    n         = n(),
+    .groups   = "drop"
+  )
+
+p <- sdg_company |>
+  ggplot(aes(x = company, y = sdg,
+             fill = avg_score,
+             text = paste0(company, " · ", sdg,
+                           "\nEvidence: ", n,
+                           "\nAvg score: ", round(avg_score, 2)))) +
+  geom_tile(colour = "white", linewidth = 0.5) +
+  geom_text(aes(label = n), colour = "white", size = 3, fontface = "bold") +
+  scale_fill_gradient2(
+    low = "#D9EAD3", mid = "#4C9F38", high = "#19486A",
+    midpoint = 5, na.value = "grey92",
+    name = "Avg score"
+  ) +
+  labs(
+    title    = "SDG portfolio comparison across companies",
+    subtitle = "Cell colour = average score · Number = evidence count",
+    x = NULL, y = NULL
+  ) +
+  theme_sdg() +
+  theme(panel.grid = element_blank(),
+        axis.text.y = element_text(size = 9))
+
+ggplotly(p, tooltip = "text") |>
+  layout(yaxis = list(autorange = "reversed"))
+```
+
+---
+
+## Maturity Benchmarking
+
+```{r maturity-bench}
+maturity_all <- compute_maturity_index(ev_wide) |>
+  mutate(report_year = as.integer(report_year))
+
+# One trace per company
+companies_list <- unique(maturity_all$company)
+p <- plot_ly()
+for (co in companies_list) {
+  d <- maturity_all |> filter(company == co)
+  p <- p |>
+    add_trace(data = d, x = ~report_year, y = ~maturity_index,
+              name = co, type = "scatter", mode = "lines+markers",
+              line = list(width = 2), marker = list(size = 7))
+}
+p |> layout(
+  title = "SDG disclosure maturity index by company",
+  xaxis = list(title = "Report year",
+               tickvals = unique(maturity_all$report_year)),
+  yaxis = list(title = "Maturity index [0–1]", range = c(0, 1),
+               tickformat = ".0%"),
+  legend = list(orientation = "h")
+)
+```
+
+---
+
+## Implementation Stage Comparison
+
+```{r stage-comparison}
+stage_company <- ev_wide |>
+  count(company, implementation_stage) |>
+  group_by(company) |>
+  mutate(pct = n / sum(n)) |>
+  ungroup()
+
+p <- stage_company |>
+  ggplot(aes(x = company, y = pct,
+             fill = implementation_stage,
+             text = paste0(STAGE_LABELS[as.character(implementation_stage)],
+                           ": ", scales::percent(pct, accuracy = 1)))) +
+  geom_col(position = "stack", width = 0.5) +
+  scale_fill_stage() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Implementation stage composition by company",
+    subtitle = "Dark = higher maturity",
+    x = NULL, y = "Proportion of evidence items",
+    fill = "Stage"
+  ) +
+  theme_sdg()
+
+ggplotly(p, tooltip = "text")
+```
+
+---
+
+## Evidence Quality Comparison
+
+```{r quality-comparison}
+quality_company <- ev_wide |>
+  group_by(company) |>
+  summarise(
+    `Avg score`            = round(mean(computed_score, na.rm = TRUE), 2),
+    `% Strong`             = scales::percent(mean(computed_strength == "strong", na.rm = TRUE), accuracy = 1),
+    `Quantitative support` = scales::percent(mean(quantitative_support, na.rm = TRUE), accuracy = 1),
+    `Oversight support`    = scales::percent(mean(oversight_support,    na.rm = TRUE), accuracy = 1),
+    `Rejection rate`       = scales::percent(
+      nrow(ev_rej[ev_rej$company == first(company), ]) /
+      (n() + nrow(ev_rej[ev_rej$company == first(company), ])),
+      accuracy = 1
+    ),
+    .groups = "drop"
+  )
+
+reactable(
+  quality_company,
+  columns = list(
+    company = colDef(name = "Company", minWidth = 120)
+  ),
+  striped = TRUE, highlight = TRUE
+)
+```
+
+---
+
+## SDG Leadership Rankings
+
+For each SDG, which company has the highest average evidence score? (Populated when ≥ 2 companies are available.)
+
+```{r sdg-leadership}
+if (n_companies >= 2) {
+  sdg_rank <- ev |>
+    group_by(sdg, company) |>
+    summarise(avg_score = round(mean(computed_score, na.rm = TRUE), 2), n = n(),
+              .groups = "drop") |>
+    group_by(sdg) |>
+    slice_max(avg_score, n = 1) |>
+    ungroup()
+
+  reactable(sdg_rank,
+            columns = list(
+              sdg       = colDef(name = "SDG", maxWidth = 80),
+              company   = colDef(name = "Leader"),
+              avg_score = colDef(name = "Avg score", maxWidth = 100, align = "center",
+                                 format = colFormat(digits = 2)),
+              n         = colDef(name = "Evidence items", maxWidth = 130, align = "center")
+            ),
+            striped = TRUE, highlight = TRUE)
+} else {
+  cat("SDG leadership rankings require at least 2 companies. Add a second company to unlock this view.")
+}
+```

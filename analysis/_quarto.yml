@@ -1,0 +1,49 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "SDG Disclosure Observatory"
+  subtitle: "A longitudinal, evidence-based measurement system for SDG reporting maturity"
+  author: "JBS University of Johannesburg"
+  date: today
+  repo-url: ""
+  sidebar:
+    style: docked
+    background: light
+  chapters:
+    - index.qmd
+    - chapter_1_methods.qmd
+    - part: "Single-Company Observatories"
+      chapters:
+        - chapter_2_observatory.qmd
+        - chapter_2b_jswsteel.qmd
+    - chapter_3_comparison.qmd
+    - chapter_4_theory.qmd
+    - chapter_5_reports.qmd
+
+format:
+  html:
+    theme:
+      light: [cosmo, custom.scss]
+    code-fold: true
+    code-summary: "Show code"
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 9
+    fig-height: 6
+    fig-dpi: 150
+    self-contained: false   # set true for single-file share
+    smooth-scroll: true
+    link-external-icon: true
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: true           # cache heavy renders; invalidated when source changes
+
+knitr:
+  opts_chunk:
+    comment: ""

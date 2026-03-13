@@ -1,0 +1,53 @@
+# SDG Evidence Extractor — Configuration
+# All settings have sensible MVP defaults. Override as needed.
+
+ollama:
+  base_url: "http://localhost:11434"
+  chat_model: "gemma2"           # Primary extraction model
+  embedding_model: "nomic-embed-text"
+  chat_timeout: 120              # seconds
+  embedding_timeout: 60          # seconds
+  max_retries: 3                 # retries for malformed JSON responses
+
+chunking:
+  max_chunk_tokens: 600          # approximate token limit per chunk (word * 1.3)
+  overlap_tokens: 80             # token overlap between sliding-window chunks
+  min_chunk_tokens: 50           # discard chunks smaller than this
+  prefer_section_boundaries: true
+
+retrieval:
+  top_k: 20                      # number of candidate chunks to retrieve
+  semantic_weight: 0.6           # weight for cosine similarity score
+  keyword_weight: 0.4            # weight for keyword hit score
+  boilerplate_penalty: 0.3       # multiplier applied to boilerplate chunks
+  min_retrieval_score: 0.15      # discard chunks below this combined score
+
+extraction:
+  batch_size: 5                  # chunks per LLM call batch (future: currently 1-by-1)
+  temperature: 0.0               # deterministic extraction
+  max_evidence_per_chunk: 5      # cap to avoid runaway extraction
+
+scoring:
+  # Documented maximum score = 4 (maturity) + 7 (tag bonuses) + 2 (support) = 13
+  # Strength thresholds:
+  weak_max: 2
+  moderate_max: 5
+  # strong: 6+
+
+output:
+  output_dir: "data/outputs"
+  json_indent: 2
+  include_rejected_in_json: true
+
+logging:
+  level: "INFO"                  # DEBUG | INFO | WARNING | ERROR
+  log_file: null                 # null = stdout only; set path to write file
+
+# Model comparison (used by evaluation/model_comparison.py)
+model_comparison:
+  chat_models:
+    - "gemma2"
+    - "mistral"
+    - "llama3.2"
+  embedding_models:
+    - "nomic-embed-text"

@@ -1,0 +1,29 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+coverage/
+
+# Data — raw PDFs and pipeline outputs are local-only
+data/raw_reports/
+data/outputs/
+data/benchmarks/
+
+# Quarto rendered output (deployed separately to gh-pages)
+analysis/_book/
+analysis/*_cache/
+analysis/.quarto/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# Word lock files
+~$*.docx
+
+# macOS
+.DS_Store

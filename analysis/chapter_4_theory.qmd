@@ -1,0 +1,664 @@
+---
+title: "Longitudinal Theory Testing"
+subtitle: "SDG disclosure as a relational network — maturity transition analysis"
+---
+
+```{r setup, include=FALSE}
+library(here); library(reactable); library(plotly)
+library(ggraph); library(tidygraph); library(visNetwork)
+source(here("R", "load_evidence.R"))
+source(here("R", "plot_themes.R"))
+source(here("R", "scoring_helpers.R"))
+source(here("R", "network_helpers.R"))
+
+co_ev      <- ev      |> filter(company == "coromandel")
+co_ev_wide <- ev_wide |> filter(company == "coromandel")
+co_sdg_yr  <- sdg_yr  |> filter(company == "coromandel")
+co_maturity <- compute_maturity_index(co_ev_wide)
+
+jsw_ev      <- ev      |> filter(company == "jswsteel")
+jsw_ev_wide <- ev_wide |> filter(company == "jswsteel")
+jsw_sdg_yr  <- sdg_yr  |> filter(company == "jswsteel")
+jsw_maturity <- compute_maturity_index(jsw_ev_wide)
+```
+
+## Theoretical framework
+
+Standard SDG disclosure analysis counts SDG mentions or scores disclosures on rubrics. This chapter extends that approach by treating SDG disclosure as a **relational network** — where SDGs are nodes connected to evidence types, implementation stages, and governance signals.
+
+This allows us to examine not only *which* SDGs appear, but *how they are embedded* in operational, strategic, and measurable disclosure structures over time.
+
+The core theoretical claim:
+
+> *Firms transition through four stages of SDG disclosure maturity: rhetorical alignment → strategic commitment → operational implementation → governed, measured outcomes. This transition is visible not only in average scores but in the topological shift of the SDG-evidence network.*
+
+---
+
+## 4.1 SDG × Evidence Tag Interaction Map
+
+### Full dataset (all years)
+
+Nodes: SDGs and evidence tag types. **Edge thickness** = evidence count (breadth). **Edge colour** = average score (depth). An edge that is thick but pale = many items, but weakly evidenced. Thick and dark = genuinely operationalised.
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r tag-network-full, fig.height=7}
+g_tag_all_co <- build_sdg_tag_network(co_ev)
+plot_bipartite_network(g_tag_all_co,
+  title = "SDG × Evidence tag network — Coromandel all years")
+```
+
+#### JSW Steel
+
+```{r tag-network-full-jsw, fig.height=7}
+g_tag_all_jsw <- build_sdg_tag_network(jsw_ev)
+plot_bipartite_network(g_tag_all_jsw,
+  title = "SDG × Evidence tag network — JSW Steel all years")
+```
+
+:::
+
+### Interactive version (hover to explore)
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r tag-network-interactive}
+plot_interactive_network(g_tag_all_co,
+  title = "SDG × Evidence Tag Network — Coromandel")
+```
+
+#### JSW Steel
+
+```{r tag-network-interactive-jsw}
+plot_interactive_network(g_tag_all_jsw,
+  title = "SDG × Evidence Tag Network — JSW Steel")
+```
+
+:::
+
+### Period comparison: Annual reports vs Integrated reports
+
+Has the network topology changed between reporting eras? For Coromandel this marks the 2022 shift to integrated reporting. For JSW Steel, 2020 falls in the pre-integrated era with 2022–2025 in the BRSR/integrated era.
+
+::: {.panel-tabset}
+
+#### Coromandel — Annual era (2016–2021)
+
+```{r tag-net-annual, fig.height=6}
+g_tag_pre_co <- build_sdg_tag_network(co_ev, filter_period = "Annual (2016–2021)")
+plot_bipartite_network(g_tag_pre_co, title = "Coromandel — Annual reports era (2016–2021)")
+```
+
+#### Coromandel — Integrated era (2022–2025)
+
+```{r tag-net-integrated, fig.height=6}
+g_tag_post_co <- build_sdg_tag_network(co_ev, filter_period = "Integrated (2022–2025)")
+plot_bipartite_network(g_tag_post_co, title = "Coromandel — Integrated reports era (2022–2025)")
+```
+
+#### JSW Steel — Pre-2022 (2020)
+
+```{r tag-net-jsw-pre, fig.height=6}
+g_tag_pre_jsw <- build_sdg_tag_network(jsw_ev, filter_period = "Annual (2016–2021)")
+plot_bipartite_network(g_tag_pre_jsw, title = "JSW Steel — Pre-2022 era (2020)")
+```
+
+#### JSW Steel — 2022–2025
+
+```{r tag-net-jsw-post, fig.height=6}
+g_tag_post_jsw <- build_sdg_tag_network(jsw_ev, filter_period = "Integrated (2022–2025)")
+plot_bipartite_network(g_tag_post_jsw, title = "JSW Steel — BRSR / Integrated era (2022–2025)")
+```
+
+:::
+
+---
+
+## 4.2 SDG × Implementation Stage Maturity Map
+
+Which SDGs have escaped rhetoric (`mention_only`) and reached measurable evidence? The structure of this bipartite network shows maturity profiles at a glance.
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r stage-network-full, fig.height=7}
+g_stage_all_co <- build_sdg_stage_network(co_ev)
+plot_bipartite_network(g_stage_all_co,
+  title = "SDG × Implementation stage — Coromandel all years")
+```
+
+#### JSW Steel
+
+```{r stage-network-full-jsw, fig.height=7}
+g_stage_all_jsw <- build_sdg_stage_network(jsw_ev)
+plot_bipartite_network(g_stage_all_jsw,
+  title = "SDG × Implementation stage — JSW Steel all years")
+```
+
+:::
+
+::: {.panel-tabset}
+
+#### Coromandel — Pre-integrated (2016–2021)
+
+```{r stage-net-pre, fig.height=6}
+g_stage_pre <- build_sdg_stage_network(co_ev, filter_period = "Annual (2016–2021)")
+plot_bipartite_network(g_stage_pre, title = "Coromandel — Stage network — Annual era")
+```
+
+#### Coromandel — Post-integrated (2022–2025)
+
+```{r stage-net-post, fig.height=6}
+g_stage_post <- build_sdg_stage_network(co_ev, filter_period = "Integrated (2022–2025)")
+plot_bipartite_network(g_stage_post, title = "Coromandel — Stage network — Integrated era")
+```
+
+#### JSW Steel — Pre-2022 (2020)
+
+```{r stage-net-jsw-pre, fig.height=6}
+g_stage_pre_jsw <- build_sdg_stage_network(jsw_ev, filter_period = "Annual (2016–2021)")
+plot_bipartite_network(g_stage_pre_jsw, title = "JSW Steel — Stage network — 2020")
+```
+
+#### JSW Steel — 2022–2025
+
+```{r stage-net-jsw-post, fig.height=6}
+g_stage_post_jsw <- build_sdg_stage_network(jsw_ev, filter_period = "Integrated (2022–2025)")
+plot_bipartite_network(g_stage_post_jsw, title = "JSW Steel — Stage network — 2022–2025")
+```
+
+:::
+
+---
+
+## 4.3 SDG Co-occurrence Network
+
+Which SDGs appear together in the same evidence item? Dense co-occurrence suggests integrated thinking; isolated SDGs may be tokenistic inclusions.
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r cooccur-network, fig.height=6}
+g_co_co <- build_sdg_cooccurrence_network(co_ev_wide)
+if (!is.null(g_co_co)) {
+  ggraph(g_co_co, layout = "fr") +
+    geom_edge_link(aes(width = count, alpha = count), colour = "#19486A") +
+    scale_edge_width(range = c(0.3, 3), name = "Co-occurrences") +
+    scale_edge_alpha(range = c(0.2, 0.9), guide = "none") +
+    geom_node_point(aes(colour = name), size = 8, show.legend = FALSE) +
+    scale_colour_sdg() +
+    geom_node_label(aes(label = name), size = 2.8, repel = TRUE,
+                    label.size = 0, fill = alpha("white", 0.85)) +
+    labs(title = "SDG co-occurrence network — Coromandel all years",
+         subtitle = "Edge thickness = number of evidence items citing both SDGs") +
+    theme_graph(base_family = "sans")
+} else {
+  cat("No multi-SDG evidence items found.")
+}
+```
+
+#### JSW Steel
+
+```{r cooccur-network-jsw, fig.height=6}
+g_co_jsw <- build_sdg_cooccurrence_network(jsw_ev_wide)
+if (!is.null(g_co_jsw)) {
+  ggraph(g_co_jsw, layout = "fr") +
+    geom_edge_link(aes(width = count, alpha = count), colour = "#FD9D24") +
+    scale_edge_width(range = c(0.3, 3), name = "Co-occurrences") +
+    scale_edge_alpha(range = c(0.2, 0.9), guide = "none") +
+    geom_node_point(aes(colour = name), size = 8, show.legend = FALSE) +
+    scale_colour_sdg() +
+    geom_node_label(aes(label = name), size = 2.8, repel = TRUE,
+                    label.size = 0, fill = alpha("white", 0.85)) +
+    labs(title = "SDG co-occurrence network — JSW Steel all years",
+         subtitle = "Edge thickness = number of evidence items citing both SDGs") +
+    theme_graph(base_family = "sans")
+} else {
+  cat("No multi-SDG evidence items found.")
+}
+```
+
+:::
+
+---
+
+## 4.4 Maturity Index — Longitudinal Analysis
+
+### Year-by-year trajectory with components
+
+```{r maturity-decomposed}
+make_comp_data <- function(mat, label) {
+  mat |>
+    mutate(report_year = as.integer(report_year)) |>
+    select(report_year,
+           `Score component`   = avg_score,
+           `Stage component`   = stage_weight_avg,
+           `Quality component` = quality_rate) |>
+    mutate(company = label)
+}
+
+comp_co  <- make_comp_data(co_maturity,  "Coromandel")
+comp_jsw <- make_comp_data(jsw_maturity, "JSW Steel")
+
+comp_colours <- c("Score component" = "#19486A", "Stage component" = "#3F7E44",
+                  "Quality component" = "#FCC30B")
+comp_names   <- c("Score component", "Stage component", "Quality component")
+```
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r maturity-decomposed-co}
+p <- plot_ly()
+for (cn in comp_names) {
+  y_sym <- as.formula(paste0("~`", cn, "`"))
+  p <- p |>
+    add_trace(data = comp_co, x = ~report_year, y = y_sym,
+              name = cn, type = "scatter", mode = "lines+markers",
+              line   = list(color = comp_colours[[cn]], width = 2),
+              marker = list(color = comp_colours[[cn]], size = 6))
+}
+p |> layout(
+  title = "Maturity components — Coromandel",
+  xaxis = list(title = "Report year", tickvals = comp_co$report_year),
+  yaxis = list(title = "Component value [0–1]", range = c(0, 1),
+               tickformat = ".0%"),
+  shapes = list(list(
+    type = "line", x0 = 2021.5, x1 = 2021.5, y0 = 0, y1 = 1,
+    line = list(color = "grey50", dash = "dash", width = 1)
+  )),
+  annotations = list(list(
+    x = 2021.7, y = 0.9, text = "Integrated<br>reporting",
+    showarrow = FALSE, xanchor = "left", font = list(color = "grey40", size = 11)
+  )),
+  legend = list(orientation = "h")
+)
+```
+
+#### JSW Steel
+
+```{r maturity-decomposed-jsw}
+p <- plot_ly()
+for (cn in comp_names) {
+  y_sym <- as.formula(paste0("~`", cn, "`"))
+  p <- p |>
+    add_trace(data = comp_jsw, x = ~report_year, y = y_sym,
+              name = cn, type = "scatter", mode = "lines+markers",
+              line   = list(color = comp_colours[[cn]], width = 2),
+              marker = list(color = comp_colours[[cn]], size = 6))
+}
+p |> layout(
+  title = "Maturity components — JSW Steel",
+  xaxis = list(title = "Report year", tickvals = comp_jsw$report_year),
+  yaxis = list(title = "Component value [0–1]", range = c(0, 1),
+               tickformat = ".0%"),
+  legend = list(orientation = "h")
+)
+```
+
+:::
+
+### Pre/post period comparison
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r period-comparison}
+compute_period_summary(co_ev_wide) |>
+  select(
+    Period         = period,
+    `N items`      = n_items,
+    `Avg score`    = avg_score,
+    `% Measurable` = pct_measurable,
+    `% Strong`     = pct_strong,
+    `Quant rate`   = quant_rate,
+    `Oversight rate` = oversight_rate
+  ) |>
+  mutate(across(where(is.numeric), ~round(.x, 2))) |>
+  reactable(
+    columns = list(
+      Period = colDef(minWidth = 180),
+      `% Measurable` = colDef(cell = function(v) scales::percent(v, accuracy = 1)),
+      `% Strong`     = colDef(cell = function(v) scales::percent(v, accuracy = 1)),
+      `Quant rate`   = colDef(cell = function(v) scales::percent(v, accuracy = 1)),
+      `Oversight rate` = colDef(cell = function(v) scales::percent(v, accuracy = 1))
+    ),
+    striped = TRUE, highlight = TRUE
+  )
+```
+
+#### JSW Steel
+
+```{r period-comparison-jsw}
+compute_period_summary(jsw_ev_wide) |>
+  select(
+    Period         = period,
+    `N items`      = n_items,
+    `Avg score`    = avg_score,
+    `% Measurable` = pct_measurable,
+    `% Strong`     = pct_strong,
+    `Quant rate`   = quant_rate,
+    `Oversight rate` = oversight_rate
+  ) |>
+  mutate(across(where(is.numeric), ~round(.x, 2))) |>
+  reactable(
+    columns = list(
+      Period = colDef(minWidth = 180),
+      `% Measurable` = colDef(cell = function(v) scales::percent(v, accuracy = 1)),
+      `% Strong`     = colDef(cell = function(v) scales::percent(v, accuracy = 1)),
+      `Quant rate`   = colDef(cell = function(v) scales::percent(v, accuracy = 1)),
+      `Oversight rate` = colDef(cell = function(v) scales::percent(v, accuracy = 1))
+    ),
+    striped = TRUE, highlight = TRUE
+  )
+```
+
+:::
+
+### Segmented regression: did integrated reporting cause a structural break?
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r segmented-regression}
+reg_data <- co_maturity |>
+  mutate(
+    post      = as.integer(report_year >= 2022),
+    time      = report_year - min(report_year),
+    time_post = time * post
+  )
+
+if (nrow(reg_data) >= 5) {
+  m <- lm(maturity_index ~ time + post + time_post, data = reg_data)
+
+  reg_plot <- reg_data |>
+    mutate(fitted = fitted(m),
+           report_year = as.integer(report_year),
+           period      = as.character(period),
+           hover       = paste0(period, "<br>", report_year,
+                                "<br>Maturity: ", scales::percent(maturity_index, 0.1)))
+
+  period_colours <- c("Annual (2016–2021)" = "#FD9D24",
+                      "Integrated (2022–2025)" = "#19486A")
+  pre_d  <- reg_plot |> filter(post == 0)
+  post_d <- reg_plot |> filter(post == 1)
+
+  plot_ly() |>
+    add_trace(data = pre_d, x = ~report_year, y = ~fitted,
+              type = "scatter", mode = "lines",
+              line = list(color = "#19486A", width = 2), showlegend = FALSE) |>
+    add_trace(data = post_d, x = ~report_year, y = ~fitted,
+              type = "scatter", mode = "lines",
+              line = list(color = "#19486A", width = 2), showlegend = FALSE) |>
+    add_trace(data = reg_plot, x = ~report_year, y = ~maturity_index,
+              color = ~period, colors = period_colours,
+              type = "scatter", mode = "markers",
+              marker = list(size = 10), text = ~hover, hoverinfo = "text") |>
+    layout(
+      title = paste0(
+        "Coromandel — Interrupted time series<br>",
+        "<sub>Post-break slope change β₃ = ", round(coef(m)["time_post"], 4),
+        " (n = ", nrow(reg_data), " years)</sub>"
+      ),
+      xaxis = list(title = "Report year", tickvals = reg_plot$report_year),
+      yaxis = list(title = "Maturity index", range = c(0, 1), tickformat = ".0%"),
+      shapes = list(list(
+        type = "line", x0 = 2021.5, x1 = 2021.5, y0 = 0, y1 = 1,
+        line = list(color = "grey50", dash = "dash", width = 1)
+      )),
+      legend = list(orientation = "h")
+    )
+} else {
+  cat("Insufficient years for segmented regression (need ≥ 5 data points).")
+}
+```
+
+#### JSW Steel
+
+```{r segmented-regression-jsw}
+reg_data_jsw <- jsw_maturity |>
+  mutate(
+    post      = as.integer(report_year >= 2022),
+    time      = report_year - min(report_year),
+    time_post = time * post
+  )
+
+if (nrow(reg_data_jsw) >= 5) {
+  m_jsw <- lm(maturity_index ~ time + post + time_post, data = reg_data_jsw)
+
+  reg_plot_jsw <- reg_data_jsw |>
+    mutate(fitted = fitted(m_jsw),
+           report_year = as.integer(report_year),
+           period      = as.character(period),
+           hover       = paste0(period, "<br>", report_year,
+                                "<br>Maturity: ", scales::percent(maturity_index, 0.1)))
+
+  period_colours <- c("Annual (2016–2021)" = "#FD9D24",
+                      "Integrated (2022–2025)" = "#FD9D24")
+  pre_d  <- reg_plot_jsw |> filter(post == 0)
+  post_d <- reg_plot_jsw |> filter(post == 1)
+
+  plot_ly() |>
+    add_trace(data = pre_d, x = ~report_year, y = ~fitted,
+              type = "scatter", mode = "lines",
+              line = list(color = "#FD9D24", width = 2), showlegend = FALSE) |>
+    add_trace(data = post_d, x = ~report_year, y = ~fitted,
+              type = "scatter", mode = "lines",
+              line = list(color = "#FD9D24", width = 2), showlegend = FALSE) |>
+    add_trace(data = reg_plot_jsw, x = ~report_year, y = ~maturity_index,
+              color = ~period, colors = period_colours,
+              type = "scatter", mode = "markers",
+              marker = list(size = 10), text = ~hover, hoverinfo = "text") |>
+    layout(
+      title = paste0(
+        "JSW Steel — Interrupted time series<br>",
+        "<sub>Post-break slope change β₃ = ", round(coef(m_jsw)["time_post"], 4),
+        " (n = ", nrow(reg_data_jsw), " years)</sub>"
+      ),
+      xaxis = list(title = "Report year", tickvals = reg_plot_jsw$report_year),
+      yaxis = list(title = "Maturity index", range = c(0, 1), tickformat = ".0%"),
+      shapes = list(list(
+        type = "line", x0 = 2021.5, x1 = 2021.5, y0 = 0, y1 = 1,
+        line = list(color = "grey50", dash = "dash", width = 1)
+      )),
+      legend = list(orientation = "h")
+    )
+} else {
+  cat("Insufficient years for segmented regression (need ≥ 5 data points).")
+}
+```
+
+:::
+
+::: {.callout-warning}
+**Statistical caution:** With fewer than 15 annual observations per company, segmented regression is illustrative rather than inferential. The coefficient direction and magnitude are meaningful; p-values should not be over-interpreted.
+:::
+
+---
+
+## 4.5 Anomaly Detection
+
+### High-confidence items that scored weak
+
+Items where the model was confident but the deterministic rubric scored low. These warrant manual review — either the rubric is too strict, or the model over-estimated evidence quality.
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r anomaly-high-conf-weak}
+co_ev_wide |>
+  filter(confidence >= 0.8, computed_strength == "weak") |>
+  arrange(desc(confidence)) |>
+  select(Year = report_year, Page = page_number, Score = computed_score,
+         Confidence = confidence, Stage = implementation_stage,
+         SDGs = candidate_sdgs, Summary = evidence_summary) |>
+  mutate(SDGs = map_chr(SDGs, paste, collapse = ", ")) |>
+  reactable(striped = TRUE, highlight = TRUE, searchable = TRUE,
+            defaultPageSize = 8)
+```
+
+#### JSW Steel
+
+```{r anomaly-high-conf-weak-jsw}
+jsw_ev_wide |>
+  filter(confidence >= 0.8, computed_strength == "weak") |>
+  arrange(desc(confidence)) |>
+  select(Year = report_year, Page = page_number, Score = computed_score,
+         Confidence = confidence, Stage = implementation_stage,
+         SDGs = candidate_sdgs, Summary = evidence_summary) |>
+  mutate(SDGs = map_chr(SDGs, paste, collapse = ", ")) |>
+  reactable(striped = TRUE, highlight = TRUE, searchable = TRUE,
+            defaultPageSize = 8)
+```
+
+:::
+
+### SDG score drops year-over-year (retreat signals)
+
+SDG-years where the average score dropped by more than 1 point from the previous year.
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r score-drops}
+drops_co <- co_sdg_yr |>
+  arrange(sdg, report_year) |>
+  group_by(sdg) |>
+  mutate(prev_score = lag(average_score), delta = average_score - prev_score) |>
+  filter(!is.na(delta), delta < -1) |>
+  ungroup() |>
+  select(SDG = sdg, Year = report_year,
+         `Previous score` = prev_score,
+         `Current score`  = average_score,
+         `Drop` = delta) |>
+  arrange(Drop)
+
+if (nrow(drops_co) > 0) {
+  reactable(drops_co, striped = TRUE, highlight = TRUE,
+            columns = list(Drop = colDef(
+              style = function(v) list(color = "#E5243B", fontWeight = "bold")
+            )))
+} else {
+  cat("No score drops > 1 point detected.")
+}
+```
+
+#### JSW Steel
+
+```{r score-drops-jsw}
+drops_jsw <- jsw_sdg_yr |>
+  arrange(sdg, report_year) |>
+  group_by(sdg) |>
+  mutate(prev_score = lag(average_score), delta = average_score - prev_score) |>
+  filter(!is.na(delta), delta < -1) |>
+  ungroup() |>
+  select(SDG = sdg, Year = report_year,
+         `Previous score` = prev_score,
+         `Current score`  = average_score,
+         `Drop` = delta) |>
+  arrange(Drop)
+
+if (nrow(drops_jsw) > 0) {
+  reactable(drops_jsw, striped = TRUE, highlight = TRUE,
+            columns = list(Drop = colDef(
+              style = function(v) list(color = "#E5243B", fontWeight = "bold")
+            )))
+} else {
+  cat("No score drops > 1 point detected.")
+}
+```
+
+:::
+
+---
+
+## 4.6 Difference Network — What Changed?
+
+Edge weight change from pre-2022 era → post-2022 era. **Green edges** = strengthened connections. **Red edges** = weakened.
+
+::: {.panel-tabset}
+
+#### Coromandel
+
+```{r difference-network, fig.height=7}
+make_diff_network <- function(company_ev, title_label) {
+  edges_pre <- company_ev |>
+    filter(period == "Annual (2016–2021)") |>
+    unnest(evidence_tags) |> rename(tag = evidence_tags) |>
+    group_by(sdg, tag) |>
+    summarise(score_pre = mean(computed_score, na.rm = TRUE), .groups = "drop") |>
+    mutate(sdg = as.character(sdg))
+
+  edges_post <- company_ev |>
+    filter(period == "Integrated (2022–2025)") |>
+    unnest(evidence_tags) |> rename(tag = evidence_tags) |>
+    group_by(sdg, tag) |>
+    summarise(score_post = mean(computed_score, na.rm = TRUE), .groups = "drop") |>
+    mutate(sdg = as.character(sdg))
+
+  diff_edges <- full_join(edges_pre, edges_post, by = c("sdg", "tag")) |>
+    mutate(
+      score_pre  = replace_na(score_pre,  0),
+      score_post = replace_na(score_post, 0),
+      delta      = score_post - score_pre,
+      direction  = if_else(delta >= 0, "Strengthened", "Weakened")
+    ) |>
+    filter(abs(delta) > 0.5)
+
+  if (nrow(diff_edges) == 0) {
+    cat("No meaningful score changes detected between periods.")
+    return(invisible(NULL))
+  }
+
+  all_nodes <- union(diff_edges$sdg, diff_edges$tag)
+  node_df   <- tibble(
+    name      = all_nodes,
+    node_type = if_else(str_starts(name, "SDG"), "SDG", "Tag"),
+    type      = !str_starts(name, "SDG")
+  )
+
+  g_diff <- tbl_graph(
+    nodes = node_df,
+    edges = diff_edges |> rename(from = sdg, to = tag),
+    directed = FALSE
+  )
+
+  ggraph(g_diff, layout = "bipartite") +
+    geom_edge_link(aes(colour = direction, width = abs(delta), alpha = abs(delta)),
+                   show.legend = TRUE) +
+    scale_edge_colour_manual(values = c("Strengthened" = "#3F7E44", "Weakened" = "#E5243B"),
+                             name = "Change direction") +
+    scale_edge_width(range = c(0.5, 4), name = "|Δ score|", guide = "none") +
+    scale_edge_alpha(range = c(0.4, 1), guide = "none") +
+    geom_node_point(aes(colour = node_type), size = 5) +
+    scale_colour_manual(values = c("SDG" = "#19486A", "Tag" = "#666666"),
+                        name = "Node type") +
+    geom_node_label(aes(label = name), repel = TRUE, size = 3,
+                    label.size = 0, fill = alpha("white", 0.8)) +
+    labs(title    = paste0(title_label, " — Difference network"),
+         subtitle = "Green = score increased · Red = score decreased · Width = magnitude") +
+    theme_graph(base_family = "sans") +
+    theme(legend.position = "right")
+}
+
+make_diff_network(co_ev, "Coromandel: Annual → Integrated era")
+```
+
+#### JSW Steel
+
+```{r difference-network-jsw, fig.height=7}
+make_diff_network(jsw_ev, "JSW Steel: Pre-2022 → 2022–2025")
+```
+
+:::

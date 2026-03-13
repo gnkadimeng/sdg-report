@@ -1,0 +1,239 @@
+---
+title: "Methods and Validation"
+---
+
+```{r setup, include=FALSE}
+library(here); library(reactable); library(gt); library(plotly)
+source(here("R", "load_evidence.R"))
+source(here("R", "plot_themes.R"))
+source(here("R", "scoring_helpers.R"))
+```
+
+## Pipeline overview
+
+The extraction pipeline is a linear LangGraph workflow with eight deterministic nodes. No unconstrained agents; the LLM is used only for extraction and normalization.
+
+```{mermaid}
+flowchart LR
+    A([PDF input]) --> B[ingest_pdf]
+    B --> C[chunk_document]
+    C --> D[retrieve_candidate_chunks]
+    D --> E[extract_evidence]
+    E --> F[validate_evidence]
+    F --> G[score_evidence]
+    G --> H[aggregate_findings]
+    H --> I([JSON · CSV · MD outputs])
+
+    style B fill:#19486A,color:#fff
+    style C fill:#19486A,color:#fff
+    style D fill:#0A97D9,color:#fff
+    style E fill:#FCC30B,color:#000
+    style F fill:#E5243B,color:#fff
+    style G fill:#3F7E44,color:#fff
+    style H fill:#3F7E44,color:#fff
+```
+
+**Key design decisions:**
+
+- The LLM assigns `candidate_sdgs`, `evidence_tags`, `implementation_stage`, and confidence — all normalization tasks
+- Validation, scoring, and final strength assessment are **deterministic Python** — the model cannot inflate ratings
+- Conservative extraction: when uncertain, the model is instructed to return no evidence rather than a speculative item
+
+---
+
+## Scoring rubric
+
+The `computed_score` (0–13) is calculated from four additive components. The model is never asked to assign weak/moderate/strong directly.
+
+```{r scoring-table}
+tibble(
+  Component    = c(
+    "A. Action maturity — mention_only",
+    "A. Action maturity — planned_action",
+    "A. Action maturity — implementation_in_progress",
+    "A. Action maturity — implemented_with_measurable_evidence",
+    "B. Tag bonus — policy",
+    "B. Tag bonus — initiative",
+    "B. Tag bonus — target",
+    "B. Tag bonus — kpi",
+    "B. Tag bonus — measured_outcome",
+    "C. Support — quantitative_support",
+    "C. Support — oversight_support"
+  ),
+  Points = c(1, 2, 3, 4, 1, 1, 1, 1, 2, 1, 1),
+  Notes  = c(
+    "SDG is mentioned without any action language",
+    "Stated plans or commitments exist",
+    "Active implementation underway",
+    "Outcomes are measured and reported",
+    "+1 if evidence references a policy",
+    "+1 if a specific initiative is named",
+    "+1 if a target is stated",
+    "+1 if a KPI is tracked",
+    "+2 if a measured outcome is present (e.g., numbers, percentages)",
+    "+1 if numeric or metric-like evidence is present",
+    "+1 if board, committee, or executive oversight is explicitly named"
+  )
+) |>
+  gt() |>
+  tab_header(title = "Evidence scoring rubric (documented max = 13)") |>
+  tab_row_group(label = "Strength thresholds", rows = FALSE) |>
+  cols_label(Component = "Component", Points = "Points", Notes = "Notes") |>
+  tab_style(
+    style = cell_fill(color = "#F0F4F8"),
+    locations = cells_body(rows = c(1, 5, 10))
+  ) |>
+  tab_footnote("Strength: 1–2 = weak · 3–5 = moderate · 6+ = strong") |>
+  opt_table_font(font = "monospace", size = 13)
+```
+
+---
+
+## Validation rules
+
+Eight deterministic rules must all pass for an evidence item to be retained. Failure causes rejection with the specific rule recorded.
+
+```{r validation-table}
+tibble(
+  `Rule #` = 1:8,
+  Condition = c(
+    "page_number > 0",
+    "evidence_text is non-empty",
+    "candidate_sdgs is non-empty",
+    "implementation_stage is in the valid set",
+    "all evidence_tags are in the valid set",
+    "measured_outcome tag requires quantitative_support = TRUE",
+    "governance tag requires oversight_support = TRUE",
+    "implemented_with_measurable_evidence requires quantitative_support = TRUE"
+  ),
+  Rationale = c(
+    "Every item must be traceable to a specific page",
+    "Evidence must have verbatim or near-verbatim text",
+    "At least one SDG must be identified",
+    "Stage must be one of four defined values",
+    "Tags must be one of seven defined values",
+    "Cannot claim measured outcomes without numbers",
+    "Cannot claim governance without naming the oversight body",
+    "Cannot claim measurable implementation without numeric evidence"
+  )
+) |>
+  reactable(
+    columns = list(
+      `Rule #`   = colDef(maxWidth = 65, align = "center"),
+      Condition  = colDef(minWidth = 220),
+      Rationale  = colDef(minWidth = 280)
+    ),
+    striped = TRUE, highlight = TRUE, compact = TRUE,
+    defaultPageSize = 8
+  )
+```
+
+---
+
+## Extraction quality audit
+
+For each report: how many chunks were retrieved, how many evidence items extracted, how many passed validation.
+
+```{r quality-audit}
+audit <- run_meta |>
+  arrange(report_year) |>
+  mutate(
+    pass_rate = scales::percent(n_valid / (n_valid + n_rejected), accuracy = 1)
+  ) |>
+  select(
+    Year       = report_year,
+    Report     = report_name,
+    Valid      = n_valid,
+    Rejected   = n_rejected,
+    `Pass rate` = pass_rate,
+    Assessment  = overall_assessment
+  )
+
+reactable(
+  audit,
+  columns = list(
+    Year       = colDef(maxWidth = 60, align = "center"),
+    Valid      = colDef(maxWidth = 70, align = "center",
+                        style = function(v) list(color = "#3F7E44", fontWeight = "bold")),
+    Rejected   = colDef(maxWidth = 80, align = "center",
+                        style = function(v) list(color = "#E5243B")),
+    `Pass rate` = colDef(maxWidth = 90, align = "center"),
+    Assessment  = colDef(minWidth = 200)
+  ),
+  striped = TRUE, highlight = TRUE, compact = TRUE
+)
+```
+
+---
+
+## Construct validity checks
+
+### 1. Does model confidence correlate with computed score?
+
+Higher model-reported confidence should correlate with higher deterministic scores if the model's self-assessment is calibrated.
+
+```{r confidence-score}
+p <- ev_wide |>
+  ggplot(aes(x = confidence, y = computed_score, colour = computed_strength)) +
+  geom_jitter(alpha = 0.4, width = 0.02, height = 0.1, size = 1.5) +
+  geom_smooth(method = "lm", se = TRUE, colour = "#19486A", linewidth = 0.8) +
+  scale_colour_strength() +
+  scale_y_continuous(breaks = 0:13) +
+  labs(
+    title    = "Model confidence vs. deterministic computed score",
+    subtitle = "Each point is one evidence item. Colour = assigned strength.",
+    x = "Model-reported confidence [0–1]",
+    y = "Computed score [0–13]",
+    colour = "Strength"
+  )
+
+ggplotly(p)
+```
+
+### 2. Tag–stage coherence
+
+Do higher-maturity tags co-occur with higher implementation stages? A `measured_outcome` tag with a `mention_only` stage would be incoherent.
+
+```{r tag-stage-heatmap}
+ev |>
+  unnest(evidence_tags) |>
+  rename(tag = evidence_tags) |>
+  count(tag, implementation_stage) |>
+  mutate(implementation_stage = factor(
+    implementation_stage,
+    levels = c("mention_only","planned_action",
+               "implementation_in_progress",
+               "implemented_with_measurable_evidence")
+  )) |>
+  ggplot(aes(x = tag, y = implementation_stage, fill = n)) +
+  geom_tile(colour = "white") +
+  geom_text(aes(label = n), size = 3, colour = "white") +
+  scale_fill_gradient(low = "#D9EAD3", high = "#19486A", name = "Count") +
+  scale_y_discrete(labels = c(
+    "mention_only"                         = "Mention only",
+    "planned_action"                       = "Planned action",
+    "implementation_in_progress"           = "In progress",
+    "implemented_with_measurable_evidence" = "Measurable evidence"
+  )) +
+  labs(
+    title = "Evidence tag × implementation stage co-occurrence",
+    subtitle = "Well-calibrated: 'measured_outcome' should appear mainly in higher stages",
+    x = "Evidence tag", y = "Implementation stage"
+  ) +
+  theme_sdg() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))
+```
+
+---
+
+## Known limitations
+
+::: {.callout-warning}
+**Retrieval ceiling:** `top_k = 20` chunks per report. Evidence in unchosen chunks is not extracted. Raising top_k increases recall but also extraction time (approximately 4 minutes per chunk on CPU with Gemma2).
+
+**Early reports (2016–2019):** Shorter, less structured PDFs. Section headings were less consistently detected. Comparisons across the full decade should account for this.
+
+**Single model:** All reports were extracted with Gemma2 (Ollama). No inter-model reliability check has been performed. Model comparison is deferred to Phase 2.
+
+**Chunk boundary effects:** Evidence spanning two chunks may be split. The chunker uses 80-token overlap to mitigate this, but some cross-boundary items may be missed or duplicated.
+:::

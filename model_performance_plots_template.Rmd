@@ -1,0 +1,348 @@
+---
+title: "Model and Performance Plots for SDG Disclosure Analysis"
+author: "OpenAI"
+date: "2026-03-12"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    df_print: paged
+  word_document: default
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(jsonlite)
+library(scales)
+library(patchwork)
+library(viridis)
+
+theme_set(
+  theme_minimal(base_family = "Palatino Linotype", base_size = 9) +
+    theme(
+      legend.position = "bottom",
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(face = "bold"),
+      axis.title = element_text(face = "bold"),
+      strip.text = element_text(face = "bold")
+    )
+)
+```
+
+# Overview
+
+This R Markdown file provides a **publication-oriented plotting
+template** for the SDG disclosure workflow.
+
+It includes templates for: - retrieval performance - over-claim rate by
+model - ablation analysis - SDG coverage heatmap - disclosure maturity
+profile by company - implementation share over time - rhetoric share
+over time - cross-model agreement heatmap
+
+These values are **illustrative sample data** for layout and workflow
+demonstration. Replace them with your actual outputs when available.
+
+# Data input
+
+You can either: 1. replace the sample tables below with real data
+frames, or 2. load JSON/CSV outputs from your pipeline.
+
+## Optional: load real data
+
+```{r eval=FALSE}
+# Example for JSON
+evidence <- jsonlite::fromJSON("evidence.json", flatten = TRUE)
+
+# Example for CSV
+performance_df <- readr::read_csv("performance_summary.csv")
+longitudinal_df <- readr::read_csv("longitudinal_summary.csv")
+agreement_df <- readr::read_csv("cross_model_agreement.csv")
+```
+
+# Sample data
+
+```{r}
+companies <- c(
+  "Coromandel","JSW Steel","BASF India","Ambuja Cement","Aarti Industries Limited","GNFC",
+  "Kumba Iron Ore","Wesizwe","Gemfields","BHP","AECI","Anglo American"
+)
+
+country_map <- tibble(
+  Company = companies,
+  Country = c(rep("India", 6), rep("South Africa", 6))
+)
+
+# Retrieval performance sample
+recall_df <- expand_grid(
+  Model = c("Mistral", "Gemma2", "Llama3"),
+  k = c(1, 3, 5, 10)
+) |>
+  mutate(
+    Recall = case_when(
+      Model == "Mistral" & k == 1 ~ 0.42,
+      Model == "Mistral" & k == 3 ~ 0.66,
+      Model == "Mistral" & k == 5 ~ 0.78,
+      Model == "Mistral" & k == 10 ~ 0.89,
+      Model == "Gemma2" & k == 1 ~ 0.40,
+      Model == "Gemma2" & k == 3 ~ 0.64,
+      Model == "Gemma2" & k == 5 ~ 0.74,
+      Model == "Gemma2" & k == 10 ~ 0.85,
+      TRUE ~ c(0.39,0.61,0.72,0.82)
+    )
+  )
+
+# Over-claim rate sample
+overclaim_df <- tibble(
+  Model = c("Mistral", "Gemma2", "Llama3"),
+  `Over-claim Rate` = c(0.12, 0.08, 0.15)
+)
+
+# Ablation study sample
+ablation_df <- tribble(
+  ~Variant, ~Metric, ~Value,
+  "Full system", "SDG F1", 0.81,
+  "No validation", "SDG F1", 0.80,
+  "No hybrid retrieval", "SDG F1", 0.71,
+  "No section-aware chunking", "SDG F1", 0.74,
+  "Single-prompt baseline", "SDG F1", 0.62,
+  "Full system", "Stage Accuracy", 0.72,
+  "No validation", "Stage Accuracy", 0.71,
+  "No hybrid retrieval", "Stage Accuracy", 0.66,
+  "No section-aware chunking", "Stage Accuracy", 0.68,
+  "Single-prompt baseline", "Stage Accuracy", 0.55,
+  "Full system", "Over-claim Rate", 0.12,
+  "No validation", "Over-claim Rate", 0.27,
+  "No hybrid retrieval", "Over-claim Rate", 0.15,
+  "No section-aware chunking", "Over-claim Rate", 0.17,
+  "Single-prompt baseline", "Over-claim Rate", 0.34
+)
+
+# SDG coverage heatmap sample
+sdg_heatmap_df <- expand_grid(
+  Company = companies,
+  SDG = c("SDG 2","SDG 5","SDG 6","SDG 8","SDG 9","SDG 11","SDG 12","SDG 13","SDG 15")
+) |>
+  mutate(
+    Score = sample(c(0, 1, 2, 3, 4, 5), n(), replace = TRUE,
+                   prob = c(0.18, 0.12, 0.15, 0.20, 0.18, 0.17))
+  ) |>
+  left_join(country_map, by = "Company")
+
+# Disclosure maturity profile sample
+maturity_df <- tribble(
+  ~Company, ~Rhetoric, ~Commitment, ~Implementation, ~Measured,
+  "Coromandel", 0.26, 0.28, 0.20, 0.26,
+  "JSW Steel", 0.22, 0.25, 0.22, 0.31,
+  "BASF India", 0.29, 0.30, 0.20, 0.21,
+  "Ambuja Cement", 0.24, 0.27, 0.20, 0.29,
+  "Aarti Industries Limited", 0.31, 0.29, 0.21, 0.19,
+  "GNFC", 0.27, 0.29, 0.20, 0.24,
+  "Kumba Iron Ore", 0.21, 0.24, 0.22, 0.33,
+  "Wesizwe", 0.35, 0.29, 0.21, 0.15,
+  "Gemfields", 0.28, 0.27, 0.21, 0.24,
+  "BHP", 0.19, 0.23, 0.22, 0.36,
+  "AECI", 0.27, 0.28, 0.20, 0.25,
+  "Anglo American", 0.18, 0.22, 0.21, 0.39
+) |>
+  pivot_longer(cols = -Company, names_to = "Category", values_to = "Share") |>
+  left_join(country_map, by = "Company")
+
+# Longitudinal sample
+years <- 2019:2025
+longitudinal_df <- expand_grid(
+  Company = companies,
+  Year = years
+) |>
+  left_join(country_map, by = "Company") |>
+  mutate(
+    ImplementationShare = case_when(
+      Company == "Anglo American" ~ seq(0.32, 0.60, length.out = length(years)),
+      Company == "BHP" ~ seq(0.34, 0.58, length.out = length(years)),
+      Company == "JSW Steel" ~ seq(0.28, 0.53, length.out = length(years)),
+      Company == "Ambuja Cement" ~ seq(0.30, 0.49, length.out = length(years)),
+      TRUE ~ seq(0.22, 0.45, length.out = length(years))
+    ),
+    RhetoricShare = case_when(
+      Company == "Anglo American" ~ seq(0.38, 0.18, length.out = length(years)),
+      Company == "BHP" ~ seq(0.35, 0.19, length.out = length(years)),
+      Company == "JSW Steel" ~ seq(0.34, 0.22, length.out = length(years)),
+      Company == "Ambuja Cement" ~ seq(0.33, 0.24, length.out = length(years)),
+      TRUE ~ seq(0.40, 0.27, length.out = length(years))
+    )
+  )
+
+# Cross-model agreement sample
+agreement_df <- tibble(
+  Company = companies,
+  `SDG Agreement` = c(0.82,0.79,0.84,0.81,0.77,0.80,0.83,0.74,0.79,0.85,0.80,0.87),
+  `Stage Agreement` = c(0.76,0.74,0.78,0.77,0.72,0.75,0.78,0.69,0.73,0.80,0.75,0.82),
+  `Over-claim Difference` = c(0.04,0.06,0.03,0.04,0.05,0.04,0.03,0.07,0.05,0.03,0.04,0.02)
+) |>
+  left_join(country_map, by = "Company") |>
+  pivot_longer(cols = c(`SDG Agreement`, `Stage Agreement`, `Over-claim Difference`),
+               names_to = "Metric", values_to = "Value")
+```
+
+# Figure 1. Retrieval performance
+
+```{r}
+ggplot(recall_df, aes(x = k, y = Recall, color = Model)) +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 1.8) +
+  scale_x_continuous(breaks = c(1, 3, 5, 10)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  labs(
+    title = "Figure 1. Retrieval performance across top-k thresholds",
+    x = "Top-k",
+    y = "Recall"
+  )
+```
+
+# Figure 2. Over-claim rate by model
+
+```{r}
+ggplot(overclaim_df, aes(x = Model, y = `Over-claim Rate`, fill = Model)) +
+  geom_col(width = 0.65, show.legend = FALSE) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 0.4)) +
+  labs(
+    title = "Figure 2. Over-claim rate by model",
+    x = NULL,
+    y = "Over-claim rate"
+  )
+```
+
+# Figure 3. Ablation analysis
+
+```{r}
+ggplot(ablation_df, aes(x = Variant, y = Value, fill = Variant)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~Metric, scales = "free_y", ncol = 1) +
+  coord_flip() +
+  labs(
+    title = "Figure 3. Ablation analysis",
+    x = NULL,
+    y = "Metric value"
+  )
+```
+
+# Figure 4. SDG coverage heatmap
+
+```{r}
+ggplot(sdg_heatmap_df, aes(x = SDG, y = fct_rev(Company), fill = Score)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  facet_wrap(~Country, scales = "free_y", ncol = 1) +
+  scale_fill_viridis(name = "Coverage / score", option = "C") +
+  labs(
+    title = "Figure 4. SDG coverage heatmap by company",
+    x = NULL,
+    y = NULL
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Figure 5. Disclosure maturity profile by company
+
+```{r}
+ggplot(maturity_df, aes(x = Company, y = Share, fill = Category)) +
+  geom_col() +
+  facet_wrap(~Country, scales = "free_x", ncol = 1) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  labs(
+    title = "Figure 5. Disclosure maturity profile by company",
+    x = NULL,
+    y = "Share of valid evidence units"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Figure 6. Implementation share over time
+
+```{r}
+ggplot(longitudinal_df, aes(x = Year, y = ImplementationShare, color = Company)) +
+  geom_line(linewidth = 0.7) +
+  facet_wrap(~Country, ncol = 1) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 0.7)) +
+  labs(
+    title = "Figure 6. Implementation share over time",
+    x = NULL,
+    y = "Implementation share"
+  ) +
+  theme(legend.position = "none")
+```
+
+# Figure 7. Rhetoric share over time
+
+```{r}
+ggplot(longitudinal_df, aes(x = Year, y = RhetoricShare, color = Company)) +
+  geom_line(linewidth = 0.7) +
+  facet_wrap(~Country, ncol = 1) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 0.5)) +
+  labs(
+    title = "Figure 7. Rhetoric share over time",
+    x = NULL,
+    y = "Rhetoric share"
+  ) +
+  theme(legend.position = "none")
+```
+
+# Figure 8. Cross-model agreement heatmap
+
+```{r}
+ggplot(agreement_df, aes(x = Metric, y = fct_rev(Company), fill = Value)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  facet_wrap(~Country, scales = "free_y", ncol = 1) +
+  scale_fill_viridis(name = "Value", option = "D") +
+  labs(
+    title = "Figure 8. Cross-model agreement heatmap",
+    x = NULL,
+    y = NULL
+  ) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+# Combined main-paper figure options
+
+```{r}
+p1 <- ggplot(recall_df, aes(x = k, y = Recall, color = Model)) +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 1.6) +
+  scale_x_continuous(breaks = c(1, 3, 5, 10)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  labs(title = "A. Retrieval performance", x = "Top-k", y = "Recall")
+
+p2 <- ggplot(overclaim_df, aes(x = Model, y = `Over-claim Rate`, fill = Model)) +
+  geom_col(width = 0.65, show.legend = FALSE) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 0.4)) +
+  labs(title = "B. Over-claim rate", x = NULL, y = "Rate")
+
+p3 <- ggplot(maturity_df, aes(x = Company, y = Share, fill = Category)) +
+  geom_col() +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  labs(title = "C. Disclosure maturity", x = NULL, y = "Share") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+p4 <- ggplot(agreement_df, aes(x = Metric, y = fct_rev(Company), fill = Value)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  scale_fill_viridis(option = "D") +
+  labs(title = "D. Cross-model agreement", x = NULL, y = NULL) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1), legend.position = "none")
+
+(p1 | p2) / (p3 | p4)
+```
+
+# Notes
+
+-   Replace the sample data frames with actual outputs from your
+    pipeline.
+-   If you want company-specific or country-specific figures only,
+    subset the data frames before plotting.
+-   If you want confidence calibration plots, first make sure the
+    confidence field is populated consistently in your extraction
+    output.
+-   Some earlier uploaded files in this chat have expired, so this
+    template does not automatically load previous report outputs.

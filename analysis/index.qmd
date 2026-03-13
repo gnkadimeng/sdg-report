@@ -1,0 +1,124 @@
+---
+title: "SDG Disclosure Observatory"
+subtitle: "About this research tool"
+---
+
+```{r setup, include=FALSE}
+library(here)
+source(here("R", "load_evidence.R"))
+source(here("R", "plot_themes.R"))
+source(here("R", "scoring_helpers.R"))
+```
+
+## What this tool does
+
+This observatory measures how companies disclose alignment with the UN Sustainable Development Goals (SDGs) — tracking **disclosure maturity** across years, report types, and peer companies. The current dataset covers **Coromandel** (2016–2025, 10 reports) and **JSW Steel** (2020–2025, 5 reports).
+
+The underlying data is produced by a local-first Python pipeline that:
+
+1. Extracts text from PDF reports page-by-page
+2. Retrieves SDG-relevant passages using hybrid semantic + keyword retrieval
+3. Extracts structured evidence using a local LLM (Gemma2 via Ollama)
+4. Validates every evidence item against deterministic rules
+5. Scores evidence using a documented rubric — no model-assigned strength labels
+
+This tool does **not** summarise what companies claim. It surfaces **auditable text evidence** and measures **disclosure maturity** — the structural difference between rhetorical SDG alignment and governed, quantified, operational implementation.
+
+---
+
+## How to navigate
+
+| Chapter | What it answers |
+|---------|----------------|
+| **1 · Methods** | How is evidence extracted, validated, and scored? |
+| **2 · Coromandel** | What does Coromandel's full SDG disclosure trajectory look like? |
+| **3 · JSW Steel** | What does JSW Steel's SDG disclosure profile look like? |
+| **4 · Comparison** | How do the two companies compare on maturity and SDG coverage? |
+| **5 · Theory** | Is there a measurable transition from rhetoric to implementation? |
+| **6 · Reports Library** | Browse the full pipeline report for any company × year. |
+
+---
+
+## Dataset at a glance
+
+```{r summary-cards}
+library(gt)
+
+run_meta |>
+  group_by(Company = stringr::str_to_title(company)) |>
+  summarise(
+    Reports  = n(),
+    Valid    = sum(n_valid),
+    Rejected = sum(n_rejected),
+    `SDGs covered` = n_distinct(ev$sdg[ev$company == unique(company)]),
+    .groups = "drop"
+  ) |>
+  bind_rows(
+    run_meta |>
+      summarise(
+        Company  = "Total",
+        Reports  = n(),
+        Valid    = sum(n_valid),
+        Rejected = sum(n_rejected),
+        `SDGs covered` = n_distinct(ev$sdg)
+      )
+  ) |>
+  gt() |>
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(rows = Company == "Total")
+  ) |>
+  tab_style(
+    style = list(cell_fill(color = "#f0f4f8"), cell_text(weight = "bold")),
+    locations = cells_body(rows = Company == "Total")
+  ) |>
+  tab_options(table.border.top.style = "none",
+              table.border.bottom.style = "none")
+```
+
+---
+
+## Evidence per year
+
+```{r yearly-bar}
+library(plotly)
+
+company_colours <- c("Coromandel" = "#19486A", "Jswsteel" = "#FD9D24")
+
+p <- run_meta |>
+  arrange(report_year) |>
+  mutate(Company = stringr::str_to_title(company)) |>
+  ggplot(aes(x = report_year, y = n_valid, fill = Company,
+             text = paste0(Company, " ", report_year,
+                           "\nValid: ", n_valid,
+                           "\nRejected: ", n_rejected))) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(values = company_colours, name = NULL) +
+  scale_x_continuous(breaks = unique(run_meta$report_year)) +
+  labs(title = "Valid evidence items per report year",
+       x = "Report year", y = "Valid evidence items") +
+  theme_sdg()
+
+ggplotly(p, tooltip = "text") |>
+  layout(hovermode = "x unified", legend = list(orientation = "h"))
+```
+
+::: {.callout-note}
+Rejected items failed one or more deterministic validation rules (e.g. a `measured_outcome` tag without quantitative support). They are stored separately and reviewed in Chapter 1.
+:::
+
+---
+
+::: {.callout-note collapse="true"}
+## Developer notes — rendering this book
+
+From the `analysis/` directory:
+
+```bash
+quarto render          # full build → _book/index.html
+quarto preview         # live preview in browser
+```
+
+Required R packages: `tidyverse`, `jsonlite`, `fs`, `here`, `gt`, `plotly`,
+`reactable`, `ggraph`, `tidygraph`, `igraph`, `visNetwork`, `scales`, `commonmark`.
+:::

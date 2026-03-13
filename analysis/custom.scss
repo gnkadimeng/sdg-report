@@ -1,0 +1,32 @@
+/*-- scss:rules --*/
+/*-- SDG Observatory custom theme overrides --*/
+
+/* Sidebar */
+.sidebar { font-size: 0.88rem; }
+
+/* Chapter headings */
+h1.title { color: #19486A; font-weight: 700; }
+
+/* SDG badge pills used in tables */
+.sdg-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  margin: 1px;
+}
+
+/* Callout overrides for caveats */
+.callout-warning { border-left-color: #FCC30B; }
+.callout-note    { border-left-color: #26BDE2; }
+
+/* Reports library — scale heading sizes inside rendered report.md content */
+.report-content h1 { font-size: 1.25rem; font-weight: 700; margin-top: 0.5rem; }
+.report-content h2 { font-size: 1.05rem; font-weight: 700; color: #19486A; border-bottom: 1px solid #eee; padding-bottom: 2px; }
+.report-content h3 { font-size: 0.95rem; font-weight: 600; margin-top: 0.75rem; }
+.report-content p, .report-content li { font-size: 0.88rem; }
+.report-content blockquote { border-left: 3px solid #FCC30B; padding-left: 0.75rem; color: #555; font-size: 0.83rem; }
+.report-content code { font-size: 0.8rem; background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+.report-content hr { border-color: #ddd; margin: 0.75rem 0; }
