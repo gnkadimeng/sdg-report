@@ -7,6 +7,7 @@ subtitle: "Full pipeline reports — per company × year, latest run only"
 library(here); library(reactable); library(htmltools)
 source(here("R", "load_evidence.R"))
 source(here("R", "plot_themes.R"))
+source(here("R", "download_helpers.R"))
 
 report_files <- find_latest_report_mds()
 
@@ -48,43 +49,52 @@ report_tbl <- run_meta |>
     report_year = as.integer(report_year)
   )
 
-reactable(
-  report_tbl |>
-    dplyr::transmute(
-      Company  = stringr::str_to_title(company),
-      Year     = report_year,
-      Report   = dplyr::coalesce(report_name, "—"),
-      Status   = status,
-      Valid    = n_valid,
-      Rejected = n_rejected,
-      `Rej. %` = scales::percent(rejection_rate, accuracy = 1)
-    ),
+# Pre-render report markdown to HTML strings (stored as hidden column).
+# JS details function returns a string → reactable inserts it as innerHTML.
+render_report_html <- function(md_path) {
+  if (is.na(md_path) || !file.exists(md_path)) {
+    return('<p style="padding:12px;color:#999;">Report file not found for this run.</p>')
+  }
+  inner <- commonmark::markdown_html(
+    paste(readLines(md_path, warn = FALSE), collapse = "\n")
+  )
+  paste0(
+    '<div style="padding:16px 24px;background:#f8f9fa;',
+    'border-left:4px solid #19486A;max-height:600px;overflow-y:auto;"',
+    ' class="report-content">', inner, '</div>'
+  )
+}
 
-  details = function(index) {
-    md_path <- report_tbl$report_md[index]
-    if (is.na(md_path) || !file.exists(md_path)) {
-      return(div(style = "padding:12px;color:#999;",
-                 "Report file not found for this run."))
-    }
-    html <- commonmark::markdown_html(
-      paste(readLines(md_path, warn = FALSE), collapse = "\n")
-    )
-    div(
-      style = paste(
-        "padding:16px 24px;background:#f8f9fa;",
-        "border-left:4px solid #19486A;",
-        "max-height:600px;overflow-y:auto;"
-      ),
-      class = "report-content",
-      HTML(html)
-    )
-  },
+disp_tbl <- report_tbl |>
+  dplyr::transmute(
+    Company      = stringr::str_to_title(company),
+    Year         = report_year,
+    Report       = dplyr::coalesce(report_name, "—"),
+    Status       = status,
+    Valid        = n_valid,
+    Rejected     = n_rejected,
+    `Rej. %`     = scales::percent(rejection_rate, accuracy = 1),
+    .report_html = sapply(report_md, render_report_html)
+  )
+
+make_download_bar(
+  disp_tbl |> dplyr::select(-.report_html),
+  "reports_index"
+)
+reactable(
+  disp_tbl,
+
+  details = JS("function(rowInfo) {
+    return React.createElement('div', {
+      dangerouslySetInnerHTML: { __html: rowInfo.values['.report_html'] }
+    })
+  }"),
 
   columns = list(
-    Company  = colDef(maxWidth = 120),
-    Year     = colDef(maxWidth = 65,  align = "center"),
-    Report   = colDef(minWidth = 220),
-    Status   = colDef(maxWidth = 115, align = "center",
+    Company      = colDef(maxWidth = 120),
+    Year         = colDef(maxWidth = 65,  align = "center"),
+    Report       = colDef(minWidth = 220),
+    Status       = colDef(maxWidth = 115, align = "center",
       cell = function(v) {
         div(
           style = paste0(
@@ -96,9 +106,10 @@ reactable(
         )
       }
     ),
-    Valid    = colDef(maxWidth = 65,  align = "center"),
-    Rejected = colDef(maxWidth = 80,  align = "center"),
-    `Rej. %` = colDef(maxWidth = 75,  align = "center")
+    Valid        = colDef(maxWidth = 65,  align = "center"),
+    Rejected     = colDef(maxWidth = 80,  align = "center"),
+    `Rej. %`     = colDef(maxWidth = 75,  align = "center"),
+    .report_html = colDef(show = FALSE)
   ),
 
   defaultSorted   = list(Year = "asc"),

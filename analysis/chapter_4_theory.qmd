@@ -10,6 +10,7 @@ source(here("R", "load_evidence.R"))
 source(here("R", "plot_themes.R"))
 source(here("R", "scoring_helpers.R"))
 source(here("R", "network_helpers.R"))
+source(here("R", "download_helpers.R"))
 
 co_ev      <- ev      |> filter(company == "coromandel")
 co_ev_wide <- ev_wide |> filter(company == "coromandel")
@@ -322,7 +323,9 @@ compute_period_summary(co_ev_wide) |>
     `Quant rate`   = quant_rate,
     `Oversight rate` = oversight_rate
   ) |>
-  mutate(across(where(is.numeric), ~round(.x, 2))) |>
+  mutate(across(where(is.numeric), ~round(.x, 2))) -> period_co
+make_download_bar(period_co, "theory_period_coromandel")
+period_co |>
   reactable(
     columns = list(
       Period = colDef(minWidth = 180),
@@ -348,7 +351,9 @@ compute_period_summary(jsw_ev_wide) |>
     `Quant rate`   = quant_rate,
     `Oversight rate` = oversight_rate
   ) |>
-  mutate(across(where(is.numeric), ~round(.x, 2))) |>
+  mutate(across(where(is.numeric), ~round(.x, 2))) -> period_jsw
+make_download_bar(period_jsw, "theory_period_jswsteel")
+period_jsw |>
   reactable(
     columns = list(
       Period = colDef(minWidth = 180),
@@ -502,8 +507,9 @@ co_ev_wide |>
   select(Year = report_year, Page = page_number, Score = computed_score,
          Confidence = confidence, Stage = implementation_stage,
          SDGs = candidate_sdgs, Summary = evidence_summary) |>
-  mutate(SDGs = map_chr(SDGs, paste, collapse = ", ")) |>
-  reactable(striped = TRUE, highlight = TRUE, searchable = TRUE,
+  mutate(SDGs = map_chr(SDGs, paste, collapse = ", ")) -> anomaly_co
+make_download_bar(anomaly_co, "theory_anomaly_coromandel")
+reactable(anomaly_co, striped = TRUE, highlight = TRUE, searchable = TRUE,
             defaultPageSize = 8)
 ```
 
@@ -516,8 +522,9 @@ jsw_ev_wide |>
   select(Year = report_year, Page = page_number, Score = computed_score,
          Confidence = confidence, Stage = implementation_stage,
          SDGs = candidate_sdgs, Summary = evidence_summary) |>
-  mutate(SDGs = map_chr(SDGs, paste, collapse = ", ")) |>
-  reactable(striped = TRUE, highlight = TRUE, searchable = TRUE,
+  mutate(SDGs = map_chr(SDGs, paste, collapse = ", ")) -> anomaly_jsw
+make_download_bar(anomaly_jsw, "theory_anomaly_jswsteel")
+reactable(anomaly_jsw, striped = TRUE, highlight = TRUE, searchable = TRUE,
             defaultPageSize = 8)
 ```
 
@@ -545,6 +552,7 @@ drops_co <- co_sdg_yr |>
   arrange(Drop)
 
 if (nrow(drops_co) > 0) {
+  make_download_bar(drops_co, "theory_drops_coromandel")
   reactable(drops_co, striped = TRUE, highlight = TRUE,
             columns = list(Drop = colDef(
               style = function(v) list(color = "#E5243B", fontWeight = "bold")
@@ -570,6 +578,7 @@ drops_jsw <- jsw_sdg_yr |>
   arrange(Drop)
 
 if (nrow(drops_jsw) > 0) {
+  make_download_bar(drops_jsw, "theory_drops_jswsteel")
   reactable(drops_jsw, striped = TRUE, highlight = TRUE,
             columns = list(Drop = colDef(
               style = function(v) list(color = "#E5243B", fontWeight = "bold")

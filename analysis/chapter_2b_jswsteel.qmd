@@ -8,6 +8,7 @@ library(here); library(reactable); library(plotly); library(gt)
 source(here("R", "load_evidence.R"))
 source(here("R", "plot_themes.R"))
 source(here("R", "scoring_helpers.R"))
+source(here("R", "download_helpers.R"))
 
 # Filter to JSW Steel only
 co_ev      <- ev      |> filter(company == "jswsteel")
@@ -215,6 +216,7 @@ sdg_totals <- co_ev |>
   ) |>
   arrange(desc(avg_score))
 
+make_download_bar(sdg_totals, "jswsteel_sdg_summary")
 reactable(
   sdg_totals,
   columns = list(
@@ -259,6 +261,7 @@ top_ev <- co_ev_wide |>
     )
   )
 
+make_download_bar(top_ev, "jswsteel_top_evidence")
 reactable(
   top_ev,
   columns = list(
@@ -312,6 +315,7 @@ all_ev <- co_ev_wide |>
     Text     = evidence_text
   )
 
+make_download_bar(all_ev, "jswsteel_all_evidence")
 reactable(
   all_ev,
   columns = list(

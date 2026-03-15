@@ -8,6 +8,7 @@ library(here); library(reactable); library(plotly); library(gt)
 source(here("R", "load_evidence.R"))
 source(here("R", "plot_themes.R"))
 source(here("R", "scoring_helpers.R"))
+source(here("R", "download_helpers.R"))
 ```
 
 ::: {.callout-note}
@@ -165,6 +166,7 @@ quality_company <- ev_wide |>
     .groups = "drop"
   )
 
+make_download_bar(quality_company, "comparison_quality")
 reactable(
   quality_company,
   columns = list(
@@ -190,6 +192,7 @@ if (n_companies >= 2) {
     slice_max(avg_score, n = 1) |>
     ungroup()
 
+  make_download_bar(sdg_rank, "comparison_sdg_rankings")
   reactable(sdg_rank,
             columns = list(
               sdg       = colDef(name = "SDG", maxWidth = 80),
